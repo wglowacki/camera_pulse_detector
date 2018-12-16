@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <opencv2/opencv.hpp>
+#include <opencv2/cudaimgproc.hpp>
 #include "functions_and_tools.h"
 #include "frame_buffer.h"
 
@@ -25,10 +26,13 @@ private:
     uint8_t _buffer_size = 60;
     int _dropped_frames_counter = 0;
     std::mutex _lock_mutex, _read_mutex;
+    std::string _path_to_haar_detector = "classifiers/haarcascade_frontalcatface_extended.xml";
+    //cv::Ptr<cv::cuda::CascadeClassifier> _cascade_gpu = cv::cuda::CascadeClassifier::create(_path_to_haar_detector);
 public:
     CameraThread();
     void setFrameBuffer(std::shared_ptr<FrameBuffer> frameBuffer);
     void sendFrameToDisplay(cv::Mat& frame);
+    void detectFacesOnFrame();
     bool isCameraAvailable();
     cv::Mat readFrame(cv::Mat& frame);
     bool writeFramesBuffer(cv::Mat& frame);

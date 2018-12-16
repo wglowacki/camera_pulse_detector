@@ -36,6 +36,7 @@ FORMS += \
 
 LIBS += \
     -L"/usr/local/lib" -L/usr/local/cuda/lib64 \
+    -lcudart \
     -lopencv_core -lopencv_highgui -lopencv_calib3d \
     -lopencv_videoio -lopencv_imgproc -lopencv_imgcodecs \
-#    -lopencv_gpu \
+    -lopencv_cudaimgproc -lopencv_cudaobjdetect \
