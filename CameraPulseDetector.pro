@@ -35,7 +35,7 @@ FORMS += \
      ./ui/mainwindow.ui
 
 LIBS += \
-    -L"/usr/local/lib" -L/usr/local/cuda/lib64 \
+    -L/usr/local/lib -L/usr/local/cuda/lib64 \
     -lcudart \
     -lopencv_core -lopencv_highgui -lopencv_calib3d \
     -lopencv_videoio -lopencv_imgproc -lopencv_imgcodecs \

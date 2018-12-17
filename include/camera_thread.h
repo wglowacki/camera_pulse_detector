@@ -26,8 +26,8 @@ private:
     uint8_t _buffer_size = 60;
     int _dropped_frames_counter = 0;
     std::mutex _lock_mutex, _read_mutex;
-    std::string _path_to_haar_detector = "classifiers/haarcascade_frontalcatface_extended.xml";
-    //cv::Ptr<cv::cuda::CascadeClassifier> _cascade_gpu = cv::cuda::CascadeClassifier::create(_path_to_haar_detector);
+    std::string _path_to_haar_detector = "/home/wojtas/repos/magisterka/camera_pulse_detector/classifiers/haarcascade_frontalface_alt.xml";
+    cv::Ptr<cv::cuda::CascadeClassifier> _cascade_gpu = cv::cuda::CascadeClassifier::create(_path_to_haar_detector);
 public:
     CameraThread();
     void setFrameBuffer(std::shared_ptr<FrameBuffer> frameBuffer);
