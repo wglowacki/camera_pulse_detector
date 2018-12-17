@@ -38,9 +38,7 @@ private:
 //    FaceDetectorThread _face_detector_thread;
 //    AlgorithmThread _algorithm_thread;
 //    ReferenceSensorThread _reference_sensor_thread;
-    std::shared_ptr<cv::VideoCapture> _videoCapture;
-    std::shared_ptr<FrameBuffer> _frame_buffer;
-    std::shared_ptr<FrameBuffer> _face_detected_image_buffer;
+    std::vector<std::shared_ptr<FrameBuffer>> _face_detected_image_buffer;
     uint8_t _bufferSize = 30;
 };
 

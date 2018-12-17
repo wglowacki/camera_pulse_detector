@@ -8,15 +8,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     setWindowStylesheet();
 
-    _frame_buffer = std::make_shared<FrameBuffer>(_bufferSize);
-    _face_detected_image_buffer = std::make_shared<FrameBuffer>(_bufferSize);
-    _face_detected_image_buffer->setActive(false);
+    _face_detected_image_buffer.push_back(std::make_shared<FrameBuffer>(_bufferSize));
+    //_face_detected_image_buffer.begin()->setActive(true);
 
-//    _face_detector_thread.setFrameBuffer(_frame_buffer);
-    _camera_thread.setFrameBuffer(_frame_buffer);
-
+    _camera_thread.setFrameBuffer(_face_detected_image_buffer);
 //    _algorithm_thread.setFrameBuffer(_face_detected_image_buffer);
-//    _face_detector_thread.addFrameBuffer(_face_detected_image_buffer);
     defineSignals();
 }
 

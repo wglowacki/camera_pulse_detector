@@ -20,7 +20,7 @@ private:
     QTime _end_time = QTime::currentTime();
     double _elapsed_time = 0.0;
     std::unique_ptr<cv::VideoCapture> _camera_stream = std::make_unique<cv::VideoCapture>(0);
-    std::shared_ptr<FrameBuffer> _frames_buff;
+    std::vector<std::shared_ptr<FrameBuffer>> _frames_buff;
     cv::Mat _single_frame;
     uint8_t _frame_cnt = 0;
     uint8_t _buffer_size = 60;
@@ -30,7 +30,7 @@ private:
     cv::Ptr<cv::cuda::CascadeClassifier> _cascade_gpu = cv::cuda::CascadeClassifier::create(_path_to_haar_detector);
 public:
     CameraThread();
-    void setFrameBuffer(std::shared_ptr<FrameBuffer> frameBuffer);
+    void setFrameBuffer(std::vector<std::shared_ptr<FrameBuffer>>& frameBuffer);
     void sendFrameToDisplay(cv::Mat& frame);
     void detectFacesOnFrame();
     bool isCameraAvailable();

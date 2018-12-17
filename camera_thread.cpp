@@ -16,7 +16,6 @@ void CameraThread::run()
     {
         if(_camera_stream->grab()) {
             _camera_stream->retrieve(_single_frame);
-            _frames_buff->buffWrite(_single_frame);
             detectFacesOnFrame();
             sendFrameToDisplay(_single_frame);
             _frame_cnt++;
@@ -37,7 +36,7 @@ void CameraThread::run()
     }
 
 }
-void CameraThread::setFrameBuffer(std::shared_ptr<FrameBuffer>  frameBuffer)
+void CameraThread::setFrameBuffer(std::vector<std::shared_ptr<FrameBuffer>>& frameBuffer)
 {
     _frames_buff = frameBuffer;
 }
@@ -67,10 +66,25 @@ void CameraThread::detectFacesOnFrame()
     _cascade_gpu->detectMultiScale(image_gpu, objbuf);
     std::vector<cv::Rect> detected_faces;
     _cascade_gpu->convert(objbuf, detected_faces);
+    uint8_t i = 0;
+
+//    Mat cars = imread("cars.jpg");
+//    cv::Mat draw = Mat(cars.size(), cars.type(), Scalar::all(0));
+//    Rect r1(84,81,130,76);
+//    Rect r2(417,144,153,85);
+
+//    cars(r1).copyTo(draw(r1));
+
+//    cv::Mat justInfo = cv::Mat::zeros(frame.size(), frame.type());
+//    for (cv::Rect roi : detections)
+//    {
+//        justInfo(roi) = frame(roi);
+//    }
     for (auto const& face: detected_faces)
     {
-        std::cout <<detected_faces.size() << std::endl;
         cv::rectangle(_single_frame, face, cv::Scalar(255));
+        auto roi = gray(face);
+        _frames_buff.at(i)->buffWrite(roi);
     }
 //    _single_frame
 //    cv::cvtColor(gray, _single_frame, cv::COLOR_GRAY2RGB);
