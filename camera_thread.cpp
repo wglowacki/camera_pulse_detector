@@ -2,8 +2,6 @@
 
 CameraThread::CameraThread()
 {
-    _camera_stream->set(CV_CAP_PROP_FRAME_WIDTH,640);
-    _camera_stream->set(CV_CAP_PROP_FRAME_HEIGHT,480);
 }
 void CameraThread::run()
 {
@@ -26,15 +24,13 @@ void CameraThread::run()
                 _elapsed_time = tools::timespaceInSeconds(_start_time, _end_time);
                 double current_fps_value = 32.0 / _elapsed_time;
                 emit currentFpsValue(current_fps_value);
-
                 _start_time = _end_time;
             }
         }
-        if(_end_requst){
+        if(_end_requst) {
             break;
         }
     }
-
 }
 void CameraThread::setFrameBuffer(std::vector<std::shared_ptr<FrameBuffer>>& frameBuffer)
 {
@@ -43,13 +39,11 @@ void CameraThread::setFrameBuffer(std::vector<std::shared_ptr<FrameBuffer>>& fra
 void CameraThread::sendFrameToDisplay(cv::Mat& frame)
 {
     QPixmap pixmap;
-    if (frame.channels()== 3){
+    if (frame.channels()== 3) {
             cv::cvtColor(frame, frame, CV_BGR2RGB);
             pixmap = QPixmap::fromImage(QImage(static_cast<const unsigned char*>(frame.data),
                              frame.cols,frame.rows,QImage::Format_RGB888));
-    }
-    else
-    {
+    } else {
             pixmap = QPixmap::fromImage(QImage(static_cast<const unsigned char*>(frame.data),
                              frame.cols,frame.rows,QImage::Format_Indexed8));
     }
@@ -57,8 +51,6 @@ void CameraThread::sendFrameToDisplay(cv::Mat& frame)
 }
 void CameraThread::detectFacesOnFrame()
 {
-    //remember about trust
-    //http://thrust.github.io/
     cv::Mat gray;
     cv::cvtColor(_single_frame, gray, cv::COLOR_RGB2GRAY);
     cv::cuda::GpuMat image_gpu(gray);
@@ -68,18 +60,6 @@ void CameraThread::detectFacesOnFrame()
     _cascade_gpu->convert(objbuf, detected_faces);
     uint8_t i = 0;
 
-//    Mat cars = imread("cars.jpg");
-//    cv::Mat draw = Mat(cars.size(), cars.type(), Scalar::all(0));
-//    Rect r1(84,81,130,76);
-//    Rect r2(417,144,153,85);
-
-//    cars(r1).copyTo(draw(r1));
-
-//    cv::Mat justInfo = cv::Mat::zeros(frame.size(), frame.type());
-//    for (cv::Rect roi : detections)
-//    {
-//        justInfo(roi) = frame(roi);
-//    }
     for (auto const& face: detected_faces)
     {
         cv::rectangle(_single_frame, face, cv::Scalar(255));
