@@ -1,17 +1,15 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
-#include <QFile>
-#include <QPixmap>
-#include <QTextStream>
-#include <QMessageBox>
 #include <iostream>
 #include <memory>
+#include <QMainWindow>
+#include <QFileDialog>
+#include <QStandardPaths>
 #include <opencv2/opencv.hpp>
-#include "camera_thread.h"
-#include "functions_and_tools.h"
-#include "frame_buffer.h"
+#include "camerathread.h"
+#include "functionsandtools.h"
+#include "framebuffer.h"
 
 namespace Ui {
 class MainWindow;
@@ -23,23 +21,23 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
-    void setWindowStylesheet();
-    void defineSignals();
     ~MainWindow();
-public slots:
+
     void startCameraThread();
-    void currentFpsValue(double value);
+    void currFpsVal(double value);
     void cameraDisconnected();
     void drawPixmap(QPixmap image);
-
+    void setWindowStylesheet();
+    void defineSignals();
+    void openMovie();
 private:
     Ui::MainWindow *ui;
-    CameraThread _camera_thread;
+    CameraThread cameraThread;
 //    FaceDetectorThread _face_detector_thread;
 //    AlgorithmThread _algorithm_thread;
 //    ReferenceSensorThread _reference_sensor_thread;
-    std::vector<std::shared_ptr<FrameBuffer>> _face_detected_image_buffer;
-    uint8_t _bufferSize = 30;
+    QVector<std::shared_ptr<FrameBuffer>> faceDetectedImageBuffer;
+    uint8_t bufferSize = 30;
 };
 
 #endif // MAINWINDOW_H

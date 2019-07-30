@@ -62,7 +62,7 @@
       </widget>
      </item>
      <item row="7" column="0" colspan="2">
-      <widget class="QPushButton" name="startAlgorithmButton">
+      <widget class="QPushButton" name="algorithmButton">
        <property name="minimumSize">
         <size>
          <width>0</width>
@@ -82,7 +82,7 @@
       </widget>
      </item>
      <item row="6" column="0" colspan="2">
-      <widget class="QPushButton" name="stopAlgorithmButton">
+      <widget class="QPushButton" name="openMovieButton">
        <property name="minimumSize">
         <size>
          <width>0</width>

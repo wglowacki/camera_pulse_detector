@@ -3,13 +3,15 @@
 
 #include <QObject>
 #include <QMutex>
-#include <queue>
-#include <memory>
+#include <QQueue>
 #include <opencv2/opencv.hpp>
 
 class FrameBuffer : public QObject
 {
     Q_OBJECT
+
+public slots :
+        void setActive(bool active);
 public:
     explicit FrameBuffer(uint8_t bufferSize, QObject *parent = nullptr);
     ~FrameBuffer() {}
@@ -18,16 +20,13 @@ public:
     bool buffRead(cv::Mat& image);
     uint8_t getBufferSize();
     uint8_t getElementsInBuffer();
-signals:
 
-    public slots :
-        void setActive(bool active);
 private:
-    QMutex _buffer_mutex;
-    int _drop_cnt;
-    std::queue<cv::Mat> _buffer;
-    bool _active;
-    uint8_t _buffer_size;
+    QMutex bufferMutex;
+    int dropCnt;
+    QQueue<cv::Mat> buffer;
+    bool active;
+    uint8_t bufferSize;
 };
 
 #endif // FRAMEBUFFER_H

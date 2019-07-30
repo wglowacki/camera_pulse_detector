@@ -13,23 +13,24 @@ UI_DIR += ./ui
 INCLUDEPATH += . \
     /usr/local/include \
     ./include 
+    ./src
 
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    algorithm_thread.cpp \
-    functions_and_tools.cpp \
-    camera_thread.cpp \
-    frame_buffer.cpp \
-    face_detector_thread.cpp
+    src/algorithmthread.cpp \
+    src/functionsandtools.cpp \
+    src/camerathread.cpp \
+    src/framebuffer.cpp \
+    src/facedetectorthread.cpp
 
 HEADERS += \
     ./include/mainwindow.h \
-    ./include/algorithm_thread.h \
-    ./include/functions_and_tools.h \
-    ./include/camera_thread.h \
-    ./include/frame_buffer.h \
-    ./include/face_detector_thread.h
+    ./include/algorithmthread.h \
+    ./include/functionsandtools.h \
+    ./include/camerathread.h \
+    ./include/framebuffer.h \
+    ./include/facedetectorthread.h
 
 FORMS += \
      ./ui/mainwindow.ui
