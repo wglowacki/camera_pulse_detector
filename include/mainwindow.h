@@ -8,6 +8,7 @@
 #include <QStandardPaths>
 #include <opencv2/opencv.hpp>
 #include "camerathread.h"
+#include "algorithmthread.h"
 #include "functionsandtools.h"
 #include "framebuffer.h"
 
@@ -24,6 +25,7 @@ public:
     ~MainWindow();
 
     void startCameraThread();
+    void startPPMAlg();
     void currFpsVal(double value);
     void cameraDisconnected();
     void drawPixmap(QPixmap image);
@@ -34,10 +36,13 @@ private:
     Ui::MainWindow *ui;
     CameraThread cameraThread;
 //    FaceDetectorThread _face_detector_thread;
-//    AlgorithmThread _algorithm_thread;
+    AlgorithmThread algorithmThread;
 //    ReferenceSensorThread _reference_sensor_thread;
-    QVector<std::shared_ptr<FrameBuffer>> faceDetectedImageBuffer;
-    uint8_t bufferSize = 30;
+    QVector<std::shared_ptr<FrameBuffer>>
+        faceDetectedImageBuffer;
+    QVector<std::shared_ptr<FrameBuffer>>
+        foreheadDetectedImageBuffer;
+    uint8_t bufferSize = 120;
 };
 
 #endif // MAINWINDOW_H

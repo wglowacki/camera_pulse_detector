@@ -37,9 +37,9 @@ public:
     QLabel *droppedFramesValueLabel;
     QLabel *fpsValueLabel;
     QLabel *droppedTextLabel;
-    QPushButton *startAlgorithmButton;
+    QPushButton *algorithmButton;
     QLabel *fpsTextLabel;
-    QPushButton *stopAlgorithmButton;
+    QPushButton *openMovieButton;
     QPushButton *connectCameraButton;
     QPushButton *saveCameraButton;
     QWidget *verticalLayoutWidget;
@@ -98,22 +98,22 @@ public:
 
         gridLayout->addWidget(droppedTextLabel, 1, 0, 1, 1);
 
-        startAlgorithmButton = new QPushButton(gridLayoutWidget);
-        startAlgorithmButton->setObjectName(QStringLiteral("startAlgorithmButton"));
-        startAlgorithmButton->setMinimumSize(QSize(0, 80));
+        algorithmButton = new QPushButton(gridLayoutWidget);
+        algorithmButton->setObjectName(QStringLiteral("algorithmButton"));
+        algorithmButton->setMinimumSize(QSize(0, 80));
 
-        gridLayout->addWidget(startAlgorithmButton, 7, 0, 1, 2);
+        gridLayout->addWidget(algorithmButton, 7, 0, 1, 2);
 
         fpsTextLabel = new QLabel(gridLayoutWidget);
         fpsTextLabel->setObjectName(QStringLiteral("fpsTextLabel"));
 
         gridLayout->addWidget(fpsTextLabel, 0, 0, 1, 1);
 
-        stopAlgorithmButton = new QPushButton(gridLayoutWidget);
-        stopAlgorithmButton->setObjectName(QStringLiteral("stopAlgorithmButton"));
-        stopAlgorithmButton->setMinimumSize(QSize(0, 80));
+        openMovieButton = new QPushButton(gridLayoutWidget);
+        openMovieButton->setObjectName(QStringLiteral("openMovieButton"));
+        openMovieButton->setMinimumSize(QSize(0, 80));
 
-        gridLayout->addWidget(stopAlgorithmButton, 6, 0, 1, 2);
+        gridLayout->addWidget(openMovieButton, 6, 0, 1, 2);
 
         connectCameraButton = new QPushButton(gridLayoutWidget);
         connectCameraButton->setObjectName(QStringLiteral("connectCameraButton"));
@@ -229,9 +229,9 @@ public:
         droppedFramesValueLabel->setText(QApplication::translate("MainWindow", "<html><head/><body><p align=\"right\"><span style=\" font-size:16pt;\">0</span></p></body></html>", Q_NULLPTR));
         fpsValueLabel->setText(QApplication::translate("MainWindow", "<html><head/><body><p align=\"right\"><span style=\" font-size:16pt;\">FPS</span></p></body></html>", Q_NULLPTR));
         droppedTextLabel->setText(QApplication::translate("MainWindow", "Dropped frames:", Q_NULLPTR));
-        startAlgorithmButton->setText(QApplication::translate("MainWindow", "Start algorithm", Q_NULLPTR));
+        algorithmButton->setText(QApplication::translate("MainWindow", "Start algorithm", Q_NULLPTR));
         fpsTextLabel->setText(QApplication::translate("MainWindow", "<html><head/><body><p>Capture FPS:</p></body></html>", Q_NULLPTR));
-        stopAlgorithmButton->setText(QApplication::translate("MainWindow", "Open movie", Q_NULLPTR));
+        openMovieButton->setText(QApplication::translate("MainWindow", "Open movie", Q_NULLPTR));
         connectCameraButton->setText(QApplication::translate("MainWindow", "Connect to camera", Q_NULLPTR));
         saveCameraButton->setText(QApplication::translate("MainWindow", "Save camera", Q_NULLPTR));
         imageDisplay->setText(QApplication::translate("MainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:24pt;\">Connect camera</span></p></body></html>", Q_NULLPTR));

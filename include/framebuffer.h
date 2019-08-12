@@ -13,18 +13,19 @@ class FrameBuffer : public QObject
 public slots :
         void setActive(bool active);
 public:
-    explicit FrameBuffer(uint8_t bufferSize, QObject *parent = nullptr);
+    explicit FrameBuffer(uint8_t bufferSize,
+                         QObject *parent = nullptr);
     ~FrameBuffer() {}
     void clear();
-    bool buffWrite(cv::Mat& image);
-    bool buffRead(cv::Mat& image);
+    bool buffWrite(const cv::Mat& image, double currT);
     uint8_t getBufferSize();
     uint8_t getElementsInBuffer();
+    QQueue<std::pair<cv::Mat, int>> buffer;
 
 private:
     QMutex bufferMutex;
     int dropCnt;
-    QQueue<cv::Mat> buffer;
+    int mSec;
     bool active;
     uint8_t bufferSize;
 };

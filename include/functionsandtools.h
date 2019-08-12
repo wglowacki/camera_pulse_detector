@@ -4,7 +4,8 @@
 #include <QMessageBox>
 #include <QTime>
 
-namespace tools {
+namespace tools
+{
     void dispQMsg(QString title, QString content);
     double timeInSec(QTime& endTime, QTime& startTime);
 }

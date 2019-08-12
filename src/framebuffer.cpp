@@ -16,15 +16,19 @@ void FrameBuffer::clear()
     bufferMutex.unlock();
 }
 
-bool FrameBuffer::buffWrite(cv::Mat& image)
+bool FrameBuffer::buffWrite(const cv::Mat& image, double currT)
 {
     bool success = false;
     bufferMutex.lock();
     if (active) {
         if (buffer.size() < bufferSize) {
-            buffer.push_back(image);
+            std::pair<cv::Mat, int> dataToBuff;
+            dataToBuff.first = image;
+            dataToBuff.second = currT;
+            buffer.enqueue(dataToBuff);
             success = true;
         } else {
+            buffer.dequeue();
             dropCnt++;
         }
     }
@@ -40,18 +44,5 @@ void FrameBuffer::setActive(bool active) {
 }
 
 uint8_t FrameBuffer::getBufferSize() {
-    return bufferSize;
-}
-
-bool FrameBuffer::buffRead(cv::Mat& image){
-    bool success = false;
-    bufferMutex.lock();
-        if(buffer.size() > 0) {
-            image = buffer.front();
-            buffer.pop_front();
-            success = true;
-        }
-    bufferMutex.unlock();
-
-    return success;
+    return buffer.size();
 }

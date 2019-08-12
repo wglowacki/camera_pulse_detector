@@ -16,14 +16,10 @@ MainWindow::MainWindow(QWidget *parent) :
     faceDetectedImageBuffer.push_back (
         std::make_shared<FrameBuffer>(bufferSize)
     );
-    foreheadDetectedImageBuffer.push_back (
-        std::make_shared<FrameBuffer>(bufferSize)
-    );
     //faceDetectedImageBuffer.begin()->setActive(true);
 
-    cameraThread.setFaceBuffer(faceDetectedImageBuffer);
-    cameraThread.setForeheadBuffer(foreheadDetectedImageBuffer);
-    algorithmThread.setForeheadBuffer(foreheadDetectedImageBuffer);
+    cameraThread.setFrameBuffer(faceDetectedImageBuffer);
+//    _algorithm_thread.setFrameBuffer(faceDetectedImageBuffer);
     defineSignals();
 }
 
@@ -61,24 +57,25 @@ void MainWindow::startCameraThread()
     ui->connectCameraButton->setChecked(false);
     ui->connectCameraButton->setText("Capturing frames");
 
-    if(!cameraThread.isRunning()) {
-        cameraThread.start();
-    } else {
+    //implement camera selection;
+    cameraThread.start();
+}
+
+bool MainWindow::checkCaptureState()
+{
+    bool state = cameraThread.isRunning();
+    if(state) {
         tools::dispQMsg("Camera running",
             "Camera already capturing frames.");
     }
-    //implement camera selection;
+
+    return state;
 }
 
 void MainWindow::startPPMAlg()
 {
-    if(cameraThread.isRunning()) {
-        ui->algorithmButton->setText("AlgorithmRunning");
-        algorithmThread.start();
-    } else {
-        tools::dispQMsg("Capture not running",
-            "Start reading frames first");
-    }
+    if
+    ui->algorithmButton->setText("AlgorithmRunning");
 }
 
 void MainWindow::cameraDisconnected()
