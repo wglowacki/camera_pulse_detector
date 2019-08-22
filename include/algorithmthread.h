@@ -6,6 +6,9 @@
 
 #include <memory>
 #include <opencv2/opencv.hpp>
+
+#include <gsl/gsl_complex.h>
+
 #include "framebuffer.h"
 #include "functionsandtools.h"
 
@@ -30,6 +33,13 @@ private:
     QVector<double> calcInterpMeans(
             const QVector<double>& evenTimes,
             QVector<double>& means
+    );
+    QVector<gsl_complex> calcFFT(const QVector<double>& vectMeans);
+    QVector<double> calcComplexFftAngles(
+            const QVector<gsl_complex>& fftraw
+    );
+    QVector<double> calcComplexFftAbs(
+            const QVector<gsl_complex>& fftraw
     );
     int minSize = 30;
     QVector<std::shared_ptr<FrameBuffer>> foreheadBuff;

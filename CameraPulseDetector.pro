@@ -41,3 +41,4 @@ LIBS += \
     -lopencv_core -lopencv_highgui -lopencv_calib3d \
     -lopencv_videoio -lopencv_imgproc -lopencv_imgcodecs \
     -lopencv_cudaimgproc -lopencv_cudaobjdetect \
+    -lgsl -lgslcblas

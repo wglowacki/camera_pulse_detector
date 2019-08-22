@@ -7,6 +7,10 @@
 namespace tools
 {
     void dispQMsg(QString title, QString content);
+    QVector<double> createHammingWindow(int len);
+    QVector<double> normalize(const QVector<double>& vect);
+    QVector<double> multiplyVec(const QVector<double>& first,
+                                const QVector<double>& second);
     double timeInSec(QTime& endTime, QTime& startTime);
 }
 
