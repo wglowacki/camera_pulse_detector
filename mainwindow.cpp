@@ -62,6 +62,7 @@ void MainWindow::startCameraThread()
     ui->connectCameraButton->setText("Capturing frames");
 
     if(!cameraThread.isRunning()) {
+        qDebug() << "Starting camera thread";
         cameraThread.start();
     } else {
         tools::dispQMsg("Camera running",
@@ -74,6 +75,7 @@ void MainWindow::startPPMAlg()
 {
     if(cameraThread.isRunning()) {
         ui->algorithmButton->setText("AlgorithmRunning");
+        qDebug() << "Starting algorithm thread";
         algorithmThread.start();
     } else {
         tools::dispQMsg("Capture not running",

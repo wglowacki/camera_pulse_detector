@@ -28,6 +28,13 @@ public:
     void run() override;
 
 private:
+    int minSize = 30;
+    QMutex threadMutex;
+    QVector<std::shared_ptr<FrameBuffer>> foreheadBuff;
+    QVector<std::shared_ptr<FrameBuffer>> currentFHBuff;
+
+    QVector<double> vectBPM;
+
     QVector<double> calcRoiMeans();
     QVector<double> calcLinspaceTimes(int vectSize);
     QVector<double> calcInterpMeans(
@@ -41,9 +48,9 @@ private:
     QVector<double> calcComplexFftAbs(
             const QVector<gsl_complex>& fftraw
     );
-    int minSize = 30;
-    QVector<std::shared_ptr<FrameBuffer>> foreheadBuff;
-
-
+    QVector<double> getDesiredFreqs(int size, double freq);
+    QVector<int> trimFreqs(const QVector<double>& genFreqs);
+    QVector<double> trimVector(const QVector<double>& data,
+               const QVector<int>& ind);
 };
 #endif // ALGORITHM_THREAD_H
