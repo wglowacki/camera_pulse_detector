@@ -20,12 +20,11 @@ public:
     bool buffWrite(const cv::Mat& image, double currT);
     uint8_t getBufferSize();
     uint8_t getElementsInBuffer();
-    QQueue<std::pair<cv::Mat, int>> buffer;
+    QQueue<std::pair<cv::Mat, double>> buffer;
 
 private:
     QMutex bufferMutex;
     int dropCnt;
-    int mSec;
     bool active;
     uint8_t bufferSize;
 };

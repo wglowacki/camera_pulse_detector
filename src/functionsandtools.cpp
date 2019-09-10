@@ -1,5 +1,6 @@
 #include "functionsandtools.h"
 #include <QtMath>
+#include <QDebug>
 
 void tools::dispQMsg(QString title, QString content)
 {
@@ -28,7 +29,7 @@ QVector<double> tools::normalize(const QVector<double>& vect)
     QVector<double> retVect;
     double mean = std::accumulate(vect.begin(),vect.end(),0.0)/vect.size();
     for (auto i : vect) {
-        retVect.push_back(i-mean);
+        retVect.push_back((i-mean));
     }
     return retVect;
 }

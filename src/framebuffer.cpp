@@ -22,7 +22,7 @@ bool FrameBuffer::buffWrite(const cv::Mat& image, double currT)
     bufferMutex.lock();
     if (active) {
         if (buffer.size() < bufferSize) {
-            std::pair<cv::Mat, int> dataToBuff;
+            std::pair<cv::Mat, double> dataToBuff;
             dataToBuff.first = image;
             dataToBuff.second = currT;
             buffer.enqueue(dataToBuff);

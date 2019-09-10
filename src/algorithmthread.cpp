@@ -33,52 +33,53 @@ void AlgorithmThread::run()
             msleep(100);
             qDebug() << "Wait for buffer";
         } else {
-            qDebug() << minSize << meansVect.size() << meansVect.back();
-            qDebug() << currentFHBuff.first()->buffer.begin()->second;
-            qDebug() << currentFHBuff.first()->buffer.back().second;
-            /*HERE FPS COUNT*/
-            //calc linspace timeshifts
-            /*TO DO -> change times and should be after locked calcROIMEANS */
             double timeDif = currentFHBuff.first()->buffer.back().second -
                              currentFHBuff.first()->buffer.begin()->second;
-            if(timeDif == 0.0) { //some problems with timestamping
+            if(timeDif <= 0.0) {
+                qDebug() << "Time difference: " << timeDif;
                 continue;
             }
             double freq = sampLen / timeDif;
-            qDebug() << "Samp len: " << sampLen << ", buffTimeDiff: " << timeDif;
-            qDebug() << "Frequencies: " << freq;
             auto vectEvenTimes = calcLinspaceTimes(sampLen);
-            qDebug() << "Cal linspace times first: " << vectEvenTimes.first();
+//            qDebug() << "\n************";
+//            qDebug() << "************";
+//            qDebug() << "Samp len: " << sampLen
+//                     << ", buffTimeDiff: " << timeDif
+//                     << ", time freq: " << freq;
             //Interpolate linspace mean values
             auto vectInterpMeans = calcInterpMeans(vectEvenTimes, meansVect);
-            qDebug() << "Cal interp means first: " << vectInterpMeans.first();
-            qDebug() << "Cal interp means last: "  << vectInterpMeans.back();
             auto hw = tools::createHammingWindow(sampLen);
             auto vectHamMeans = tools::multiplyVec(vectInterpMeans, hw);
             auto normalizedMeans = tools::normalize(vectHamMeans);
-//            // Get absolute values of FFT coefficients
+            // Get absolute values of FFT coefficients
             auto vectfft = calcFFT(normalizedMeans);
-            auto vectfftAngles = calcComplexFftAngles(vectfft);
             auto vectfftAbs = calcComplexFftAbs(vectfft);
-            static int i =0;
-            i++;
-            if (i>100) {
-                qDebug() << "*****************************************";
-                qDebug() << "sample lenght, freq:" << sampLen << "; "<< freq;
-            }
-            // Get indices of frequences that are less than 50 and greater than 150
+            auto vectfftAngles = calcComplexFftAngles(vectfft);
+
+
+//            qDebug() << "vectfftAngles first: " << vectfftAngles.first();
+//            qDebug() << "vectfftAngles sec:   " << vectfftAngles.at(1);
+//            qDebug() << "vectfftAngles third: " << vectfftAngles.at(2);
+//            qDebug() << "vectfftAngles last:  " << vectfftAngles.back();
+
+//            qDebug() << "vectfftAbs first: " << vectfftAbs.first();
+//            qDebug() << "vectfftAbs sec: "   << vectfftAbs.at(1);
+//            qDebug() << "vectfftAbs third: " << vectfftAbs.at(2);
+//            qDebug() << "freq: " << freq;
+//            qDebug() << "vectfftAbs last: "  << vectfftAbs.back();
+////            // Get indices of frequences that are less than 50 and greater than 150
             auto filteredFreqs = getDesiredFreqs(sampLen, freq);
-            // Filter out frequencies less than 50 and greater than 180
+//            // Filter out frequencies less than 50 and greater than 180
             auto filteredIndexes = trimFreqs(filteredFreqs);
+//            qDebug() << filteredIndexes.size();
 
+            // Used filtered indices to get corresponding fft values, angles, and frequencies
 
-//            // Used filtered indices to get corresponding fft values, angles, and frequencies
-
-            qDebug() << "Normalized means. Last:" << normalizedMeans.last();
+//            qDebug() << "Normalized means. Last:" << normalizedMeans.last();
 
             auto fftabs = trimVector(vectfftAbs, filteredIndexes);
             auto angles = trimVector(vectfftAngles, filteredIndexes);
-            auto freqs = trimVector(filteredFreqs, filteredIndexes);
+            auto freqs  = trimVector(filteredFreqs, filteredIndexes);
 
             int maxFftAbsIndex = static_cast<int> (std::distance(fftabs.begin(),
                     std::max_element(fftabs.begin(), fftabs.end()) ) );
@@ -89,7 +90,6 @@ void AlgorithmThread::run()
             qDebug() << "*****************************************";
             qDebug() << "BPM: " << vectBPM.back();
             qDebug() << "Max FFT ABS: " << fftabs.at(maxFftAbsIndex);
-            qDebug() << "BPM: " << vectBPM.back();
 
             qDebug() << "*****************************************";
             qDebug() << "*****************************************";
@@ -143,8 +143,7 @@ QVector<double> AlgorithmThread::calcLinspaceTimes(int vectSize)
     double startT = currentFHBuff.first()->buffer.first().second;
     double endT = currentFHBuff.last()->buffer.last().second;
     double timeGap = (endT - startT) / (vectSize - 1);
-    qDebug() << "Times gap(98): " << timeGap;
-    assert(timeGap);
+    assert(timeGap>0);
     evenTimes.first() = startT;
     for (int i=1; i < (vectSize-1); ++i)
     {
@@ -154,29 +153,41 @@ QVector<double> AlgorithmThread::calcLinspaceTimes(int vectSize)
     return evenTimes;
 }
 
-//
-// Transform data to FFT
-//http://www.gnu.org/software/gsl/manual/gsl-ref_16.html
-//
 QVector<gsl_complex> AlgorithmThread::calcFFT(const QVector<double>& vectMeans)
 {
-    int size = vectMeans.size();
+    size_t size = vectMeans.size();
+//    qDebug() << "size";
+//    qDebug() << size;
     double data[size];
     std::copy(vectMeans.begin(), vectMeans.end(), data);
-    // Transform to fft
-    gsl_fft_real_workspace* work = gsl_fft_real_workspace_alloc(size);
+//    qDebug() << data[1];
+//    qDebug() << data[size/2];
+
+    gsl_complex_packed_array gslData = data;
     gsl_fft_real_wavetable* real = gsl_fft_real_wavetable_alloc(size);
+    gsl_fft_real_workspace* work = gsl_fft_real_workspace_alloc(size);
     gsl_fft_real_transform(data, 1, size, real, work);
     gsl_fft_real_wavetable_free(real);
     gsl_fft_real_workspace_free(work);
+//    qDebug() << data[1];
+//    qDebug() << data[size/2];
     // Unpack complex numbers
     gsl_complex unpacked[size];
-    gsl_fft_halfcomplex_unpack(data, (double *) unpacked, 1, size);
+    gsl_fft_halfcomplex_unpack(data, (double*) unpacked, 1, size);
     // Copy to  a vector
     int unpacked_size = size / 2 + 1;
-    std::vector<gsl_complex> stdVect(unpacked, unpacked + unpacked_size);
-    QVector<gsl_complex> output;
-    output.fromStdVector(stdVect);
+    std::vector<gsl_complex> stdVect(unpacked, unpacked + size);
+    QVector<gsl_complex> output =  QVector<gsl_complex>::fromStdVector(stdVect);
+
+    for (int i=0; i<unpacked_size; i++) {
+//        qDebug() << output[i].dat[1];
+//        qDebug() << output[i].dat[0];
+    }
+//    qDebug() << output[size/2].dat[0];
+//    qDebug() << "**************";
+//    qDebug() << "**************";
+//    qDebug() << "**************";
+//    qDebug() << "**************";
     return output;
 }
 
@@ -185,7 +196,7 @@ QVector<double> AlgorithmThread::calcComplexFftAngles(
 {
     QVector<double> output;
 	for (auto&& fft : fftraw) {
-		output.push_back( atan2(GSL_IMAG(fft), GSL_REAL(fft)) );
+        output.push_back( atan2(GSL_IMAG(fft), GSL_REAL(fft)) );
 	}
 	return output;
 }
@@ -194,23 +205,23 @@ QVector<double> AlgorithmThread::calcComplexFftAbs(
         const QVector<gsl_complex>& fftraw)
 {
     QVector<double> output;
-	for (auto&& fft : fftraw) {
-		output.push_back(gsl_complex_abs(fft));
-	}
+    for (auto&& fft : fftraw) {
+        output.push_back(gsl_complex_abs(fft));
+    }
 	return output;
 }
 
 QVector<double> AlgorithmThread::getDesiredFreqs(int size, double freq)
 {
     /**TO DO -> why 60**/
-    // Frequencies using spaced values within interval 0 - L/2+1
+    // Frequencies using spaced values within interval - L/2+1
     int newSize = (size / 2) + 1;
     QVector<double> genFreqs(newSize);
     double freqGen = freq/newSize;
     int cnt=0;
-    for(auto freq : genFreqs)
+    for(auto& freq : genFreqs)
     {
-        freq = 60 * freqGen* (++cnt);
+        freq = freqGen* (++cnt)*60;
     }
     return genFreqs;
 }
@@ -223,6 +234,8 @@ QVector<int> AlgorithmThread::trimFreqs(const QVector<double>& genFreqs)
     QVector<int> filteredFreqs;
     for(int i = 0; i < genFreqs.size(); ++i)
     {
+//        qDebug() << genFreqs.at(i);
+//        qDebug() << genFreqs.at(i)/60;
         if(genFreqs.at(i) > BPM_FILTER_LOW && genFreqs.at(i) < BPM_FILTER_HIGH) {
             filteredFreqs.push_back(i);
         }

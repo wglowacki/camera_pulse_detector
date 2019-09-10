@@ -42,7 +42,7 @@ void CameraThread::run()
 void CameraThread::readFromFile(QString fn)
 {
     videoStream->open(fn.toStdString());
-    qDebug() << fn;
+    qDebug() << "File name" << fn;
 }
 
 void CameraThread::setFaceBuffer(
