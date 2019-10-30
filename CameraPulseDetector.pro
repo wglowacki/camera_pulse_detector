@@ -24,13 +24,15 @@ SOURCES += \
     src/framebuffer.cpp \
     src/facedetectorthread.cpp
 
+CUDA_SOURCES += src/matrixoperations.cu
 HEADERS += \
     ./include/mainwindow.h \
     ./include/algorithmthread.h \
     ./include/functionsandtools.h \
     ./include/camerathread.h \
     ./include/framebuffer.h \
-    ./include/facedetectorthread.h
+    ./include/facedetectorthread.h \
+    ./include/matrixoperations.h
 
 FORMS += \
      ./ui/mainwindow.ui

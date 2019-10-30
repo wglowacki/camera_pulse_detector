@@ -19,7 +19,7 @@ class AlgorithmThread : public QThread
 public slots:
     void end();
 signals:
-//    void calculate();
+   void bpsUpdate(double value);
 
 public:
     AlgorithmThread(QObject* parent = nullptr);

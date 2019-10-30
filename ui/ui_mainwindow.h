@@ -52,11 +52,10 @@ public:
     QWidget *gridLayoutWidget_3;
     QGridLayout *gridLayout_3;
     QLabel *fpsTextLabel_2;
-    QLabel *fpsValueLabel_2;
+    QLabel *labelBps;
     QLabel *fpsTextLabel_3;
-    QLabel *fpsValueLabel_3;
+    QLabel *labelSensor;
     QCheckBox *referenceSensorEnableCheckbox;
-    QPushButton *connectCameraButton_2;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
     QMenuBar *menuBar;
@@ -176,20 +175,20 @@ public:
 
         gridLayout_3->addWidget(fpsTextLabel_2, 1, 0, 1, 1);
 
-        fpsValueLabel_2 = new QLabel(gridLayoutWidget_3);
-        fpsValueLabel_2->setObjectName(QStringLiteral("fpsValueLabel_2"));
+        labelBps = new QLabel(gridLayoutWidget_3);
+        labelBps->setObjectName(QStringLiteral("labelBps"));
 
-        gridLayout_3->addWidget(fpsValueLabel_2, 1, 1, 1, 1);
+        gridLayout_3->addWidget(labelBps, 1, 1, 1, 1);
 
         fpsTextLabel_3 = new QLabel(gridLayoutWidget_3);
         fpsTextLabel_3->setObjectName(QStringLiteral("fpsTextLabel_3"));
 
         gridLayout_3->addWidget(fpsTextLabel_3, 2, 0, 1, 1);
 
-        fpsValueLabel_3 = new QLabel(gridLayoutWidget_3);
-        fpsValueLabel_3->setObjectName(QStringLiteral("fpsValueLabel_3"));
+        labelSensor = new QLabel(gridLayoutWidget_3);
+        labelSensor->setObjectName(QStringLiteral("labelSensor"));
 
-        gridLayout_3->addWidget(fpsValueLabel_3, 2, 1, 1, 1);
+        gridLayout_3->addWidget(labelSensor, 2, 1, 1, 1);
 
         referenceSensorEnableCheckbox = new QCheckBox(gridLayoutWidget_3);
         referenceSensorEnableCheckbox->setObjectName(QStringLiteral("referenceSensorEnableCheckbox"));
@@ -198,10 +197,6 @@ public:
 
         gridLayout_3->addWidget(referenceSensorEnableCheckbox, 0, 0, 1, 2);
 
-        connectCameraButton_2 = new QPushButton(centralWidget);
-        connectCameraButton_2->setObjectName(QStringLiteral("connectCameraButton_2"));
-        connectCameraButton_2->setGeometry(QRect(530, 620, 299, 80));
-        connectCameraButton_2->setMinimumSize(QSize(0, 80));
         MainWindow->setCentralWidget(centralWidget);
         mainToolBar = new QToolBar(MainWindow);
         mainToolBar->setObjectName(QStringLiteral("mainToolBar"));
@@ -239,11 +234,10 @@ public:
         label_2->setText(QApplication::translate("MainWindow", "Original signal from qCustomPlot", Q_NULLPTR));
         label->setText(QApplication::translate("MainWindow", "Reference sensor PSD from qCustomPlot", Q_NULLPTR));
         fpsTextLabel_2->setText(QApplication::translate("MainWindow", "<html><head/><body><p>Pulse from algorithm</p></body></html>", Q_NULLPTR));
-        fpsValueLabel_2->setText(QApplication::translate("MainWindow", "<html><head/><body><p align=\"right\"><span style=\" font-size:16pt;\">0</span></p></body></html>", Q_NULLPTR));
+        labelBps->setText(QApplication::translate("MainWindow", "<html><head/><body><p align=\"right\"><span style=\" font-size:16pt;\">0</span></p></body></html>", Q_NULLPTR));
         fpsTextLabel_3->setText(QApplication::translate("MainWindow", "<html><head/><body><p>Pulse from sensor</p></body></html>", Q_NULLPTR));
-        fpsValueLabel_3->setText(QApplication::translate("MainWindow", "<html><head/><body><p align=\"right\"><span style=\" font-size:16pt;\">0</span></p></body></html>", Q_NULLPTR));
+        labelSensor->setText(QApplication::translate("MainWindow", "<html><head/><body><p align=\"right\"><span style=\" font-size:16pt;\">0</span></p></body></html>", Q_NULLPTR));
         referenceSensorEnableCheckbox->setText(QApplication::translate("MainWindow", "Enable reference sensor read:                    ", Q_NULLPTR));
-        connectCameraButton_2->setText(QApplication::translate("MainWindow", "Connect to camera", Q_NULLPTR));
         menuCamera_heart_rate_monitor->setTitle(QApplication::translate("MainWindow", "Camera heart rate monitor", Q_NULLPTR));
     } // retranslateUi
 

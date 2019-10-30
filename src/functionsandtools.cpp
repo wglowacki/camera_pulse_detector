@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "functionsandtools.h"
 #include <QtMath>
 #include <QDebug>

@@ -32,6 +32,13 @@ public:
     void setWindowStylesheet();
     void defineSignals();
     void openMovie();
+
+signals:
+    void lockForehead(bool state);
+    void disconnnectCamera();
+protected:
+    void keyPressEvent(QKeyEvent* key);
+
 private:
     Ui::MainWindow *ui;
     CameraThread cameraThread;

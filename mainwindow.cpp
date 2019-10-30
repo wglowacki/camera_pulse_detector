@@ -5,6 +5,8 @@
 #include <QTextStream>
 #include <QDebug>
 #include <QMessageBox>
+#include <QKeyEvent>
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -55,6 +57,17 @@ void MainWindow::defineSignals()
         this, &MainWindow::currFpsVal, Qt::QueuedConnection);
     connect(&cameraThread, &CameraThread::drawPixmap,
         this, &MainWindow::drawPixmap, Qt::QueuedConnection);
+
+    connect(this, &MainWindow::lockForehead,
+        &cameraThread, &CameraThread::lockForehead, Qt::QueuedConnection);
+    connect(this, &MainWindow::disconnnectCamera,
+        &cameraThread, &CameraThread::end, Qt::QueuedConnection);
+
+
+    connect(&algorithmThread, &AlgorithmThread::bpsUpdate,
+            [this](double value) {
+        ui->labelBps->setText(QString::number(value, 'f', 2));
+    });
 }
 void MainWindow::startCameraThread()
 {
@@ -108,6 +121,17 @@ void MainWindow::openMovie() {
     }
     cameraThread.readFromFile(fileName);
     cameraThread.start();
+}
+
+void MainWindow::keyPressEvent(QKeyEvent* key)
+{
+    if(key->text() == "q") {
+        emit disconnnectCamera();
+    } else if(key->text() == "l") {
+        emit lockForehead(true);
+    }  else if(key->text() == "u") {
+        emit lockForehead(false);
+    }
 }
 
 MainWindow::~MainWindow()

@@ -34,10 +34,12 @@ public:
     void readFromFile(QString fn);
     bool writeFramesBuffer(cv::Mat& frame);
     bool readFramesBuffer(cv::Mat& frame);
+    void lockForehead(bool state);
     void run() override;
 
 private:
     bool endRequest = false;
+    bool lockForeheadState = false;
     QTime startTime = QTime::currentTime();
     QTime endTime = QTime::currentTime();
     std::chrono::time_point<std::chrono::system_clock>
@@ -54,6 +56,8 @@ private:
     QTime captTime;
 
 
+    std::vector<cv::Rect> detectedFaces;
+
     QVector<QVector<std::shared_ptr<FrameBuffer>>> vectOfAllFace;
     QVector<QVector<std::shared_ptr<FrameBuffer>>> vectOfAllForehead;
     QVector<QVector<QTime>> vectOfAllTimestamps;
@@ -61,8 +65,8 @@ private:
     struct ForeheadPos {
         float x = 0.5;
         float y = 0.18;
-        float w = 0.25;
-        float h = 0.15;
+        float w = 0.28;
+        float h = 0.20;
     } foreheadPos;
 
     cv::Mat singleFrame;

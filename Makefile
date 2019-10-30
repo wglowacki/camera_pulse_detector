@@ -38,7 +38,7 @@ DISTNAME      = CameraPulseDetector1.0.0
 DISTDIR = /home/wojtas/magisterka/camera_pulse_detector/build/CameraPulseDetector1.0.0
 LINK          = g++
 LFLAGS        = -Wl,-O1
-LIBS          = $(SUBLIBS) -L/usr/local/lib -L/usr/local/cuda/lib64 -lcudart -lopencv_core -lopencv_highgui -lopencv_calib3d -lopencv_videoio -lopencv_imgproc -lopencv_imgcodecs -lopencv_cudaimgproc -lopencv_cudaobjdetect -lQt5Widgets -lQt5Gui -lQt5Core -lGL -lpthread 
+LIBS          = $(SUBLIBS) -L/usr/local/lib -L/usr/local/cuda/lib64 -lcudart -lopencv_core -lopencv_highgui -lopencv_calib3d -lopencv_videoio -lopencv_imgproc -lopencv_imgcodecs -lopencv_cudaimgproc -lopencv_cudaobjdetect -lgsl -lgslcblas -lQt5Widgets -lQt5Gui -lQt5Core -lGL -lpthread 
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -153,7 +153,8 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		include/functionsandtools.h \
 		include/camerathread.h \
 		include/framebuffer.h \
-		include/facedetectorthread.h main.cpp \
+		include/facedetectorthread.h \
+		include/matrixoperations.h main.cpp \
 		mainwindow.cpp \
 		src/algorithmthread.cpp \
 		src/functionsandtools.cpp \
@@ -345,7 +346,7 @@ distdir: FORCE
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents qdarkstyle/style.qrc $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents include/mainwindow.h include/algorithmthread.h include/functionsandtools.h include/camerathread.h include/framebuffer.h include/facedetectorthread.h $(DISTDIR)/
+	$(COPY_FILE) --parents include/mainwindow.h include/algorithmthread.h include/functionsandtools.h include/camerathread.h include/framebuffer.h include/facedetectorthread.h include/matrixoperations.h $(DISTDIR)/
 	$(COPY_FILE) --parents main.cpp mainwindow.cpp src/algorithmthread.cpp src/functionsandtools.cpp src/camerathread.cpp src/framebuffer.cpp src/facedetectorthread.cpp $(DISTDIR)/
 	$(COPY_FILE) --parents ui/mainwindow.ui $(DISTDIR)/
 

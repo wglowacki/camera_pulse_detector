@@ -3,6 +3,7 @@
 
 CameraThread::CameraThread()
 {
+    cameraStream->set(CV_CAP_PROP_FPS, 20);
 }
 void CameraThread::run()
 {
@@ -11,6 +12,7 @@ void CameraThread::run()
             "Cannot connect to camera. Camera thread ends");
         emit cameraDisconnected();
     }
+    endRequest = false;
     while(true)
     {
         if (videoStream->isOpened()) {
@@ -23,6 +25,7 @@ void CameraThread::run()
         }
             detectFacesOnFrame();
             sendFrameToDisplay(singleFrame);
+
             frameCnt++;
 
             if(frameCnt >= 32) {
@@ -76,11 +79,13 @@ void CameraThread::detectFacesOnFrame()
 {
     cv::Mat gray;
     cv::cvtColor(singleFrame, gray, cv::COLOR_RGB2GRAY);
-    cv::cuda::GpuMat imageGpu(gray);
-    cv::cuda::GpuMat objBuf;
-    cascadeGpu->detectMultiScale(imageGpu, objBuf);
-    std::vector<cv::Rect> detectedFaces;
-    cascadeGpu->convert(objBuf, detectedFaces);
+    if(!lockForeheadState) {
+        cv::cuda::GpuMat imageGpu(gray);
+        cv::cuda::GpuMat objBuf;
+        cascadeGpu->detectMultiScale(imageGpu, objBuf);
+        cascadeGpu->convert(objBuf, detectedFaces);
+    }
+
     uint8_t i = 0;
     for (auto const& face: detectedFaces)
     {
@@ -89,18 +94,25 @@ void CameraThread::detectFacesOnFrame()
             auto fh = extractForehead(face);
             cv::Mat matFace = cv::Mat(singleFrame, face);
             cv::Mat matFh = cv::Mat(singleFrame, fh);
+
+            cv::Mat channels[3];
+            cv::split(matFh, channels);
+            channels[0] = cv::Mat::zeros(matFh.rows, matFh.cols, CV_8UC1);
+            channels[2] = cv::Mat::zeros(matFh.rows, matFh.cols, CV_8UC1);
+            cv::merge(channels,3,matFh);
+//            cv::imshow("one", matFh);
+
             auto captTs = std::chrono::system_clock::now();
             std::chrono::duration<double> elapsed = captTs - startTs;
             faceBuff.at(i)->buffWrite(
                         matFace, elapsed.count());
             foreheadBuff.at(i)->buffWrite(
-                        matFh, elapsed.count());
+                        channels[1], elapsed.count());
             cv::rectangle(singleFrame, fh, cv::Scalar(255));
         }
         cv::rectangle(singleFrame, face, cv::Scalar(255));
+        ++i;
     }
-//    _single_frame
-//    cv::cvtColor(gray, _single_frame, cv::COLOR_GRAY2RGB);
 }
 
 cv::Rect CameraThread::extractForehead(const cv::Rect& face)
@@ -114,6 +126,11 @@ cv::Rect CameraThread::extractForehead(const cv::Rect& face)
     fh.height = static_cast<int>(face.height * foreheadPos.h);
 
     return fh;
+}
+
+void CameraThread::lockForehead(bool state)
+{
+    lockForeheadState = state;
 }
 
 void CameraThread::end() {

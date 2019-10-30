@@ -34,7 +34,7 @@ void AlgorithmThread::run()
             qDebug() << "Wait for buffer";
         } else {
             double timeDif = currentFHBuff.first()->buffer.back().second -
-                             currentFHBuff.first()->buffer.begin()->second;
+                             currentFHBuff.first()->buffer.first().second;
             if(timeDif <= 0.0) {
                 qDebug() << "Time difference: " << timeDif;
                 continue;
@@ -54,9 +54,13 @@ void AlgorithmThread::run()
             // Get absolute values of FFT coefficients
             auto vectfft = calcFFT(normalizedMeans);
             auto vectfftAbs = calcComplexFftAbs(vectfft);
-            auto vectfftAngles = calcComplexFftAngles(vectfft);
+            // Get indices of frequences that are less than 50 and greater than 150
+            auto filteredFreqs = getDesiredFreqs(sampLen, freq);
+            auto filteredIndexes = trimFreqs(filteredFreqs);
 
 
+//            auto vectfftAngles = calcComplexFftAngles(vectfft);
+//            auto angles = trimVector(vectfftAngles, filteredIndexes);
 //            qDebug() << "vectfftAngles first: " << vectfftAngles.first();
 //            qDebug() << "vectfftAngles sec:   " << vectfftAngles.at(1);
 //            qDebug() << "vectfftAngles third: " << vectfftAngles.at(2);
@@ -67,10 +71,6 @@ void AlgorithmThread::run()
 //            qDebug() << "vectfftAbs third: " << vectfftAbs.at(2);
 //            qDebug() << "freq: " << freq;
 //            qDebug() << "vectfftAbs last: "  << vectfftAbs.back();
-////            // Get indices of frequences that are less than 50 and greater than 150
-            auto filteredFreqs = getDesiredFreqs(sampLen, freq);
-//            // Filter out frequencies less than 50 and greater than 180
-            auto filteredIndexes = trimFreqs(filteredFreqs);
 //            qDebug() << filteredIndexes.size();
 
             // Used filtered indices to get corresponding fft values, angles, and frequencies
@@ -78,14 +78,13 @@ void AlgorithmThread::run()
 //            qDebug() << "Normalized means. Last:" << normalizedMeans.last();
 
             auto fftabs = trimVector(vectfftAbs, filteredIndexes);
-            auto angles = trimVector(vectfftAngles, filteredIndexes);
             auto freqs  = trimVector(filteredFreqs, filteredIndexes);
 
             int maxFftAbsIndex = static_cast<int> (std::distance(fftabs.begin(),
                     std::max_element(fftabs.begin(), fftabs.end()) ) );
 
             vectBPM.push_back(freqs.at(maxFftAbsIndex));
-
+            bpsUpdate(vectBPM.back());
             qDebug() << "*****************************************";
             qDebug() << "*****************************************";
             qDebug() << "BPM: " << vectBPM.back();
@@ -116,9 +115,10 @@ void AlgorithmThread::setForeheadBuffer(
 
 QVector<double> AlgorithmThread::calcRoiMeans()
 {
-    /*CALCULATED ONLY FOR FIRST FRAME*/
     threadMutex.lock();
-    QVector<double> meansVect;
+    QVector<QVector<double>> meansVect;
+    QVector<double> singleVect;
+    int i = 0;
     std::for_each(currentFHBuff.begin(), currentFHBuff.end(),
               [&](std::shared_ptr<FrameBuffer> fh)
     {
@@ -127,14 +127,17 @@ QVector<double> AlgorithmThread::calcRoiMeans()
         {
             cv::Mat cvMat = frame.first;
             auto scalarMeans = cv::mean(cvMat);
-            meansVect.push_back(scalarMeans.val[0]);
+            singleVect.push_back(scalarMeans.val[i]);
 //            qDebug() << meansVect.back() << meansVect.size();
 //            qDebug() << scalarMeans.val[0] << scalarMeans.val[2];
         }
         );
+        meansVect.push_back(singleVect);
+        ++i;
+        singleVect.clear();
     });
     threadMutex.unlock();
-    return meansVect;
+    return meansVect.first();
 }
 
 QVector<double> AlgorithmThread::calcLinspaceTimes(int vectSize)
@@ -213,7 +216,6 @@ QVector<double> AlgorithmThread::calcComplexFftAbs(
 
 QVector<double> AlgorithmThread::getDesiredFreqs(int size, double freq)
 {
-    /**TO DO -> why 60**/
     // Frequencies using spaced values within interval - L/2+1
     int newSize = (size / 2) + 1;
     QVector<double> genFreqs(newSize);
@@ -264,7 +266,6 @@ QVector<double> AlgorithmThread::calcInterpMeans(
     gsl_spline *spline = gsl_spline_alloc (gsl_interp_linear, len_even_times);
     gsl_spline_init (spline, evenTimes_array, data_y_array, len_even_times);
 
-    // BUGFIX: Need to iterate throuh given x-interpolation range
     for(int xi = 0; xi < evenTimes.size(); xi++)
     {
         interpRes.push_back(
