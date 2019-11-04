@@ -9,8 +9,12 @@
 
 #include <gsl/gsl_complex.h>
 
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
+
 #include "framebuffer.h"
 #include "functionsandtools.h"
+#include "matrixoperations.h"
 
 class AlgorithmThread : public QThread
 {
@@ -36,7 +40,7 @@ private:
     QVector<double> vectBPM;
 
     QVector<double> calcRoiMeans();
-    QVector<double> calcLinspaceTimes(int vectSize);
+    QVector<double> calcLinspaceTimes(int vectSize, double startT, double endT);
     QVector<double> calcInterpMeans(
             const QVector<double>& evenTimes,
             QVector<double>& means

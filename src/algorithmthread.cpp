@@ -23,8 +23,6 @@ void AlgorithmThread::run()
             qDebug() << "waiting for detected frames.";
             msleep(300);
         }
-        //!!!!!!!!!!!!!!!!!!!!!!!!
-        //Everyting as for now is done for one face detected
         currentFHBuff = foreheadBuff;
         auto meansVect = calcRoiMeans();
         int sampLen = meansVect.size();
@@ -40,42 +38,25 @@ void AlgorithmThread::run()
                 continue;
             }
             double freq = sampLen / timeDif;
-            auto vectEvenTimes = calcLinspaceTimes(sampLen);
-//            qDebug() << "\n************";
-//            qDebug() << "************";
-//            qDebug() << "Samp len: " << sampLen
-//                     << ", buffTimeDiff: " << timeDif
-//                     << ", time freq: " << freq;
+            double startT = currentFHBuff.first()->buffer.first().second;
+            double endT = currentFHBuff.last()->buffer.last().second;
+
+            auto stdVectEvenTimes = matrix_operations::calcLinspaceTimes(sampLen, startT, endT);
+
+            auto vectEvenTimes = QVector<double>::fromStdVector(stdVectEvenTimes);
             //Interpolate linspace mean values
             auto vectInterpMeans = calcInterpMeans(vectEvenTimes, meansVect);
-            auto hw = tools::createHammingWindow(sampLen);
-            auto vectHamMeans = tools::multiplyVec(vectInterpMeans, hw);
+            auto hw = tools::createHammingWindow(sampLen).toStdVector();
+            auto stdVectHamMeans = matrix_operations::multiplyVecKernel(vectInterpMeans.toStdVector(), hw);
+            auto vectHamMeans = QVector<double>::fromStdVector(stdVectHamMeans);
             auto normalizedMeans = tools::normalize(vectHamMeans);
+//            auto normalizedMeans = QVector<double>::fromStdVector(normalizedMeans);
             // Get absolute values of FFT coefficients
             auto vectfft = calcFFT(normalizedMeans);
             auto vectfftAbs = calcComplexFftAbs(vectfft);
             // Get indices of frequences that are less than 50 and greater than 150
             auto filteredFreqs = getDesiredFreqs(sampLen, freq);
             auto filteredIndexes = trimFreqs(filteredFreqs);
-
-
-//            auto vectfftAngles = calcComplexFftAngles(vectfft);
-//            auto angles = trimVector(vectfftAngles, filteredIndexes);
-//            qDebug() << "vectfftAngles first: " << vectfftAngles.first();
-//            qDebug() << "vectfftAngles sec:   " << vectfftAngles.at(1);
-//            qDebug() << "vectfftAngles third: " << vectfftAngles.at(2);
-//            qDebug() << "vectfftAngles last:  " << vectfftAngles.back();
-
-//            qDebug() << "vectfftAbs first: " << vectfftAbs.first();
-//            qDebug() << "vectfftAbs sec: "   << vectfftAbs.at(1);
-//            qDebug() << "vectfftAbs third: " << vectfftAbs.at(2);
-//            qDebug() << "freq: " << freq;
-//            qDebug() << "vectfftAbs last: "  << vectfftAbs.back();
-//            qDebug() << filteredIndexes.size();
-
-            // Used filtered indices to get corresponding fft values, angles, and frequencies
-
-//            qDebug() << "Normalized means. Last:" << normalizedMeans.last();
 
             auto fftabs = trimVector(vectfftAbs, filteredIndexes);
             auto freqs  = trimVector(filteredFreqs, filteredIndexes);
@@ -140,11 +121,9 @@ QVector<double> AlgorithmThread::calcRoiMeans()
     return meansVect.first();
 }
 
-QVector<double> AlgorithmThread::calcLinspaceTimes(int vectSize)
+QVector<double> AlgorithmThread::calcLinspaceTimes(int vectSize, double startT, double endT)
 {
     QVector<double> evenTimes(vectSize);
-    double startT = currentFHBuff.first()->buffer.first().second;
-    double endT = currentFHBuff.last()->buffer.last().second;
     double timeGap = (endT - startT) / (vectSize - 1);
     assert(timeGap>0);
     evenTimes.first() = startT;
