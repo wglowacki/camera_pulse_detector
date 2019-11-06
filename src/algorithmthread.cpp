@@ -19,10 +19,15 @@ void AlgorithmThread::run()
 {
     while(true)
     {
+
         if(foreheadBuff.empty()) {
             qDebug() << "waiting for detected frames.";
             msleep(300);
         }
+        if(!flagReceivedNewImage) {
+            msleep(40);
+        }
+        flagReceivedNewImage = false;
         currentFHBuff = foreheadBuff;
         auto meansVect = calcRoiMeans();
         int sampLen = meansVect.size();
@@ -31,26 +36,30 @@ void AlgorithmThread::run()
             msleep(100);
             qDebug() << "Wait for buffer";
         } else {
-            double timeDif = currentFHBuff.first()->buffer.back().second -
-                             currentFHBuff.first()->buffer.first().second;
+            double startT = currentFHBuff.first()->buffer.first().second;
+            double endT = currentFHBuff.last()->buffer.last().second;
+            double timeDif = endT - startT;
             if(timeDif <= 0.0) {
                 qDebug() << "Time difference: " << timeDif;
                 continue;
             }
             double freq = sampLen / timeDif;
-            double startT = currentFHBuff.first()->buffer.first().second;
-            double endT = currentFHBuff.last()->buffer.last().second;
 
-            auto stdVectEvenTimes = matrix_operations::calcLinspaceTimes(sampLen, startT, endT);
-
-            auto vectEvenTimes = QVector<double>::fromStdVector(stdVectEvenTimes);
+            auto vectEvenTimes =
+                    matrix_operations::calcLinspaceTimes(
+                        sampLen, startT, endT
+                    );
+            //auto vectEvenTimes = QVector<double>::fromStdVector(stdVectEven);
             //Interpolate linspace mean values
-            auto vectInterpMeans = calcInterpMeans(vectEvenTimes, meansVect);
-            auto hw = tools::createHammingWindow(sampLen).toStdVector();
-            auto stdVectHamMeans = matrix_operations::multiplyVecKernel(vectInterpMeans.toStdVector(), hw);
-            auto vectHamMeans = QVector<double>::fromStdVector(stdVectHamMeans);
+            auto vectInterpMeans = calcInterpMeans(
+                        vectEvenTimes, meansVect
+            );
+            auto hw = tools::createHammingWindow(sampLen);
+            auto vectHamMeans =
+                    matrix_operations::multiplyVecKernel (
+                        vectInterpMeans, hw
+                    );
             auto normalizedMeans = tools::normalize(vectHamMeans);
-//            auto normalizedMeans = QVector<double>::fromStdVector(normalizedMeans);
             // Get absolute values of FFT coefficients
             auto vectfft = calcFFT(normalizedMeans);
             auto vectfftAbs = calcComplexFftAbs(vectfft);
@@ -61,26 +70,33 @@ void AlgorithmThread::run()
             auto fftabs = trimVector(vectfftAbs, filteredIndexes);
             auto freqs  = trimVector(filteredFreqs, filteredIndexes);
 
-            int maxFftAbsIndex = static_cast<int> (std::distance(fftabs.begin(),
+            //CPU
+            /*
+            unsigned maxFftAbsIndex =
+                    static_cast<unsigned> (std::distance(fftabs.begin(),
                     std::max_element(fftabs.begin(), fftabs.end()) ) );
+            */
+            //GPU
+            unsigned maxFftAbsIndex = matrix_operations::maxIndex(fftabs);
 
             vectBPM.push_back(freqs.at(maxFftAbsIndex));
-            bpsUpdate(vectBPM.back());
-            qDebug() << "*****************************************";
-            qDebug() << "*****************************************";
-            qDebug() << "BPM: " << vectBPM.back();
-            qDebug() << "Max FFT ABS: " << fftabs.at(maxFftAbsIndex);
+            static int cnt = 0;
+            if(cnt > 5) {
+                updateBpm(vectBPM);
+                cnt = -1;
+            }
+            ++cnt;
 
-            qDebug() << "*****************************************";
-            qDebug() << "*****************************************";
+//            debugLog();
         }
     }
 }
 
-QVector<double> AlgorithmThread::trimVector (
-        const QVector<double>& data, const QVector<int>& ind )
+std::vector<double>
+AlgorithmThread::trimVector ( const std::vector<double>& data,
+                              const std::vector<int>& ind )
 {
-    QVector<double> trimmed;
+    std::vector<double> trimmed;
     for (auto const &i : ind)
     {
         trimmed.push_back(data.at(i));
@@ -92,6 +108,11 @@ void AlgorithmThread::setForeheadBuffer(
         QVector<std::shared_ptr<FrameBuffer>> &frameBuffer)
 {
     foreheadBuff = frameBuffer;
+}
+
+void AlgorithmThread::setImageReceivedFlag(bool& sharedFlag)
+{
+    flagReceivedNewImage = sharedFlag;
 }
 
 QVector<double> AlgorithmThread::calcRoiMeans()
@@ -109,8 +130,6 @@ QVector<double> AlgorithmThread::calcRoiMeans()
             cv::Mat cvMat = frame.first;
             auto scalarMeans = cv::mean(cvMat);
             singleVect.push_back(scalarMeans.val[i]);
-//            qDebug() << meansVect.back() << meansVect.size();
-//            qDebug() << scalarMeans.val[0] << scalarMeans.val[2];
         }
         );
         meansVect.push_back(singleVect);
@@ -121,7 +140,9 @@ QVector<double> AlgorithmThread::calcRoiMeans()
     return meansVect.first();
 }
 
-QVector<double> AlgorithmThread::calcLinspaceTimes(int vectSize, double startT, double endT)
+QVector<double>
+AlgorithmThread::calcLinspaceTimes(
+        int vectSize, double startT, double endT)
 {
     QVector<double> evenTimes(vectSize);
     double timeGap = (endT - startT) / (vectSize - 1);
@@ -135,7 +156,8 @@ QVector<double> AlgorithmThread::calcLinspaceTimes(int vectSize, double startT, 
     return evenTimes;
 }
 
-QVector<gsl_complex> AlgorithmThread::calcFFT(const QVector<double>& vectMeans)
+std::vector<gsl_complex>
+AlgorithmThread::calcFFT(const std::vector<double>& vectMeans)
 {
     size_t size = vectMeans.size();
 //    qDebug() << "size";
@@ -159,18 +181,18 @@ QVector<gsl_complex> AlgorithmThread::calcFFT(const QVector<double>& vectMeans)
     // Copy to  a vector
     int unpacked_size = size / 2 + 1;
     std::vector<gsl_complex> stdVect(unpacked, unpacked + size);
-    QVector<gsl_complex> output =  QVector<gsl_complex>::fromStdVector(stdVect);
+//    QVector<gsl_complex> output =  QVector<gsl_complex>::fromStdVector(stdVect);
 
-    for (int i=0; i<unpacked_size; i++) {
+//    for (int i=0; i<unpacked_size; i++) {
 //        qDebug() << output[i].dat[1];
 //        qDebug() << output[i].dat[0];
-    }
+//    }
 //    qDebug() << output[size/2].dat[0];
 //    qDebug() << "**************";
 //    qDebug() << "**************";
 //    qDebug() << "**************";
 //    qDebug() << "**************";
-    return output;
+    return stdVect;
 }
 
 QVector<double> AlgorithmThread::calcComplexFftAngles(
@@ -183,21 +205,22 @@ QVector<double> AlgorithmThread::calcComplexFftAngles(
 	return output;
 }
 
-QVector<double> AlgorithmThread::calcComplexFftAbs(
-        const QVector<gsl_complex>& fftraw)
+std::vector<double> AlgorithmThread::calcComplexFftAbs(
+        const std::vector<gsl_complex>& fftraw)
 {
-    QVector<double> output;
+    std::vector<double> output;
     for (auto&& fft : fftraw) {
         output.push_back(gsl_complex_abs(fft));
     }
 	return output;
 }
 
-QVector<double> AlgorithmThread::getDesiredFreqs(int size, double freq)
+std::vector<double>
+AlgorithmThread::getDesiredFreqs(int size, double freq)
 {
     // Frequencies using spaced values within interval - L/2+1
     int newSize = (size / 2) + 1;
-    QVector<double> genFreqs(newSize);
+    std::vector<double> genFreqs(newSize);
     double freqGen = freq/newSize;
     int cnt=0;
     for(auto& freq : genFreqs)
@@ -207,31 +230,32 @@ QVector<double> AlgorithmThread::getDesiredFreqs(int size, double freq)
     return genFreqs;
 }
 
-QVector<int> AlgorithmThread::trimFreqs(const QVector<double>& genFreqs)
+std::vector<int>
+AlgorithmThread::trimFreqs(const std::vector<double>& genFreqs)
 {
     // Filter out frequencies less than 50 and greater than 180
     constexpr int BPM_FILTER_LOW = 50;
     constexpr int BPM_FILTER_HIGH = 180;
-    QVector<int> filteredFreqs;
+    std::vector<int> filteredFreqs;
     for(int i = 0; i < genFreqs.size(); ++i)
     {
-//        qDebug() << genFreqs.at(i);
-//        qDebug() << genFreqs.at(i)/60;
-        if(genFreqs.at(i) > BPM_FILTER_LOW && genFreqs.at(i) < BPM_FILTER_HIGH) {
+        if(genFreqs.at(i) > BPM_FILTER_LOW &&
+            genFreqs.at(i) < BPM_FILTER_HIGH)
+        {
             filteredFreqs.push_back(i);
         }
     }
     return filteredFreqs;
 }
 
-QVector<double> AlgorithmThread::calcInterpMeans(
-        const QVector<double>& evenTimes, QVector<double>& means
-)
+std::vector<double>
+AlgorithmThread::calcInterpMeans(const std::vector<double>& evenTimes,
+                                 QVector<double>& means )
 {
     //https://www.gnu.org/software/gsl/doc/html/interp.html
     assert (evenTimes.size() == means.size());
 
-    QVector<double> interpRes;
+    std::vector<double> interpRes;
 
     //    http://www.cplusplus.com/forum/general/216928/
     double data_y_array[means.size()];
@@ -242,8 +266,11 @@ QVector<double> AlgorithmThread::calcInterpMeans(
     size_t len_even_times = static_cast<size_t>(evenTimes.size());
 
     gsl_interp_accel *acc = gsl_interp_accel_alloc ();
-    gsl_spline *spline = gsl_spline_alloc (gsl_interp_linear, len_even_times);
-    gsl_spline_init (spline, evenTimes_array, data_y_array, len_even_times);
+    gsl_spline *spline = gsl_spline_alloc (
+                gsl_interp_linear, len_even_times
+                );
+    gsl_spline_init (spline, evenTimes_array,
+                     data_y_array, len_even_times );
 
     for(int xi = 0; xi < evenTimes.size(); xi++)
     {
@@ -256,6 +283,25 @@ QVector<double> AlgorithmThread::calcInterpMeans(
     gsl_interp_accel_free (acc);
 
     return interpRes;
+}
+
+void AlgorithmThread::updateBpm(const std::vector<double>& v)
+{
+    double ret = 0;
+    if(v.size() > 20) {
+        ret = std::accumulate( v.end()-20, v.end(), 0.0) / 20;
+    }
+    bpsUpdate(ret);
+}
+
+void AlgorithmThread::debugLog()
+{
+    qDebug() << "*****************************************";
+    qDebug() << "*****************************************";
+    qDebug() << "BPM: " << vectBPM.back();
+
+    qDebug() << "*****************************************";
+    qDebug() << "*****************************************";
 }
 
 void AlgorithmThread::end()

@@ -25,7 +25,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     cameraThread.setFaceBuffer(faceDetectedImageBuffer);
     cameraThread.setForeheadBuffer(foreheadDetectedImageBuffer);
+    cameraThread.setImageReceivedFlag(flagReceivedNewImage);
     algorithmThread.setForeheadBuffer(foreheadDetectedImageBuffer);
+    cameraThread.setImageReceivedFlag(flagReceivedNewImage);
     defineSignals();
 }
 

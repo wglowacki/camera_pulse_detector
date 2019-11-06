@@ -49,7 +49,8 @@ private:
         faceDetectedImageBuffer;
     QVector<std::shared_ptr<FrameBuffer>>
         foreheadDetectedImageBuffer;
-    uint8_t bufferSize = 120;
+    bool flagReceivedNewImage = false;
+    uint8_t bufferSize = 240;
 };
 
 #endif // MAINWINDOW_H

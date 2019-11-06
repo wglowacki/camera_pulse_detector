@@ -60,6 +60,12 @@ void CameraThread::setForeheadBuffer(
     foreheadBuff = frameBuffer;
 }
 
+
+void CameraThread::setImageReceivedFlag(bool& sharedFlag)
+{
+    flagReceivedNewImage = sharedFlag;
+}
+
 void CameraThread::sendFrameToDisplay(cv::Mat& frame)
 {
     QPixmap pixmap;
@@ -108,6 +114,7 @@ void CameraThread::detectFacesOnFrame()
                         matFace, elapsed.count());
             foreheadBuff.at(i)->buffWrite(
                         channels[1], elapsed.count());
+            flagReceivedNewImage = true;
             cv::rectangle(singleFrame, fh, cv::Scalar(255));
         }
         cv::rectangle(singleFrame, face, cv::Scalar(255));

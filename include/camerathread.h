@@ -27,6 +27,7 @@ public:
                         <FrameBuffer> >& frameBuffer);
     void setForeheadBuffer(QVector< std::shared_ptr
                         <FrameBuffer> >& frameBuffer);
+    void setImageReceivedFlag(bool& flagReceivedNewImage);
     void sendFrameToDisplay(cv::Mat& frame);
     void detectFacesOnFrame();
     bool isCameraAvailable();
@@ -53,6 +54,7 @@ private:
 
     QVector<std::shared_ptr<FrameBuffer>> faceBuff;
     QVector<std::shared_ptr<FrameBuffer>> foreheadBuff;
+    bool flagReceivedNewImage = false;
     QTime captTime;
 
 
@@ -64,8 +66,8 @@ private:
 
     struct ForeheadPos {
         float x = 0.5;
-        float y = 0.18;
-        float w = 0.28;
+        float y = 0.14;
+        float w = 0.42;
         float h = 0.20;
     } foreheadPos;
 

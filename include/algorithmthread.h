@@ -29,6 +29,7 @@ public:
     AlgorithmThread(QObject* parent = nullptr);
     void setForeheadBuffer(
             QVector<std::shared_ptr<FrameBuffer>> &frameBuffer);
+    void setImageReceivedFlag(bool& flagReceivedNewImage);
     void run() override;
 
 private:
@@ -36,25 +37,36 @@ private:
     QMutex threadMutex;
     QVector<std::shared_ptr<FrameBuffer>> foreheadBuff;
     QVector<std::shared_ptr<FrameBuffer>> currentFHBuff;
-
-    QVector<double> vectBPM;
+    bool flagReceivedNewImage = false;
+    std::vector<double> vectBPM;
 
     QVector<double> calcRoiMeans();
-    QVector<double> calcLinspaceTimes(int vectSize, double startT, double endT);
-    QVector<double> calcInterpMeans(
-            const QVector<double>& evenTimes,
+    QVector<double> calcLinspaceTimes (
+            int vectSize, double startT, double endT
+    );
+    std::vector<double> calcInterpMeans (
+            const std::vector<double> & evenTimes,
             QVector<double>& means
     );
-    QVector<gsl_complex> calcFFT(const QVector<double>& vectMeans);
+    std::vector<gsl_complex> calcFFT(const std::vector<double>& vectMeans);
     QVector<double> calcComplexFftAngles(
             const QVector<gsl_complex>& fftraw
     );
-    QVector<double> calcComplexFftAbs(
-            const QVector<gsl_complex>& fftraw
+    std::vector<double> calcComplexFftAbs(
+            const std::vector<gsl_complex>& fftraw
     );
-    QVector<double> getDesiredFreqs(int size, double freq);
-    QVector<int> trimFreqs(const QVector<double>& genFreqs);
-    QVector<double> trimVector(const QVector<double>& data,
-               const QVector<int>& ind);
+
+    std::vector<double>
+    getDesiredFreqs(int size, double freq);
+
+    std::vector<int>
+    trimFreqs(const std::vector<double>& genFreqs);
+
+    std::vector<double>
+    trimVector(const std::vector<double>& data,
+               const std::vector<int>& ind);
+
+    void updateBpm(const std::vector<double>& vectBPM);
+    void debugLog();
 };
 #endif // ALGORITHM_THREAD_H

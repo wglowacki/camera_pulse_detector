@@ -11,12 +11,21 @@
 
 namespace matrix_operations
 {
-    std::vector<double> calcLinspaceTimes(int vectSize, double startT, double endT);
-    std::vector<double> normalize(const std::vector<double>& vect);
-    std::vector<double> multiplyVec(const std::vector<double>& first,
-                                    const std::vector<double>& second);
-    std::vector<double> multiplyVecKernel(const std::vector<double>& first,
-                                    const std::vector<double>& second);
+    std::vector<double>
+    calcLinspaceTimes(int vectSize, double startT, double endT);
+
+    std::vector<double>
+    normalize(const std::vector<double>& vect);
+
+    std::vector<double>
+    multiplyVec( const std::vector<double>& first,
+                 const std::vector<double>& second);
+
+    std::vector<double>
+    multiplyVecKernel( const std::vector<double>& first,
+                       const std::vector<double>& second);
+
+    unsigned maxIndex(const std::vector<double>& vect);
 };
 
 #endif // MATRIXOPERATIONS_H

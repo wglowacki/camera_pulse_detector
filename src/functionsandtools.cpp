@@ -11,23 +11,23 @@ void tools::dispQMsg(QString title, QString content)
     messageBox.exec();
 }
 
-QVector<double> tools::createHammingWindow(int len)
+std::vector<double> tools::createHammingWindow(int len)
 {
-    QVector<double> hw(len);
+    std::vector<double> hw(len);
     if (len == 1) {
-        hw.first() = 1.0;
+        hw.front() = 1.0;
     }
     else {
         for (int i = 0; i < len; ++i) {
-            hw[i] = 0.54 - 0.46*cos( (2*M_PI*i)/(len-1) );
+            hw.at(i) = 0.54 - 0.46*cos( (2*M_PI*i)/(len-1) );
         }
     }
     return hw;
 }
 
-QVector<double> tools::normalize(const QVector<double>& vect)
+std::vector<double> tools::normalize(const std::vector<double>& vect)
 {
-    QVector<double> retVect;
+    std::vector<double> retVect;
     double mean = std::accumulate(vect.begin(),vect.end(),0.0)/vect.size();
     for (auto i : vect) {
         retVect.push_back((i-mean));
