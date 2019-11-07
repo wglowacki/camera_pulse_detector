@@ -19,7 +19,6 @@ multiplyVecKernel( const std::vector<double>& first,
                    const std::vector<double>& second )
 {
     double *x = nullptr, *y = nullptr;
-    // Allocate Unified Memory – accessible from CPU or GPU
     int arraySize = first.size();
 
     cudaMallocManaged(&x, arraySize*sizeof(double));
@@ -39,8 +38,6 @@ multiplyVecKernel( const std::vector<double>& first,
     int blockSize = 256;
     int numBlocks = (N + blockSize - 1) / blockSize;
     multiply<<<numBlocks, blockSize>>>(arraySize, x, y);
-
-    // Wait for GPU to finish before accessing on host
     cudaDeviceSynchronize();
     std::vector<double> retVect(arraySize);
     cudaMemcpy(&retVect.front(), y,

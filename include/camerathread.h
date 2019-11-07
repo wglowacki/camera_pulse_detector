@@ -60,15 +60,17 @@ private:
 
     std::vector<cv::Rect> detectedFaces;
 
-    QVector<QVector<std::shared_ptr<FrameBuffer>>> vectOfAllFace;
-    QVector<QVector<std::shared_ptr<FrameBuffer>>> vectOfAllForehead;
+    QVector<QVector
+        <std::shared_ptr<FrameBuffer>>> vectOfAllFace;
+    QVector<QVector
+        <std::shared_ptr<FrameBuffer>> > vectOfAllForehead;
     QVector<QVector<QTime>> vectOfAllTimestamps;
 
     struct ForeheadPos {
-        float x = 0.5;
-        float y = 0.14;
-        float w = 0.42;
-        float h = 0.20;
+        double x = 0.5;
+        double y = 0.14;
+        double w = 0.42;
+        double h = 0.20;
     } foreheadPos;
 
     cv::Mat singleFrame;

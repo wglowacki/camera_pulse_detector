@@ -26,7 +26,7 @@ void CameraThread::run()
             detectFacesOnFrame();
             sendFrameToDisplay(singleFrame);
 
-            frameCnt++;
+            ++frameCnt;
 
             if(frameCnt >= 32) {
                 frameCnt = 0;
@@ -103,18 +103,22 @@ void CameraThread::detectFacesOnFrame()
 
             cv::Mat channels[3];
             cv::split(matFh, channels);
-            channels[0] = cv::Mat::zeros(matFh.rows, matFh.cols, CV_8UC1);
-            channels[2] = cv::Mat::zeros(matFh.rows, matFh.cols, CV_8UC1);
+            channels[0] = cv::Mat::zeros(
+                        matFh.rows, matFh.cols, CV_8UC1);
+            channels[2] = cv::Mat::zeros(
+                        matFh.rows, matFh.cols, CV_8UC1);
             cv::merge(channels,3,matFh);
-//            cv::imshow("one", matFh);
 
             auto captTs = std::chrono::system_clock::now();
-            std::chrono::duration<double> elapsed = captTs - startTs;
+            std::chrono::duration<double>
+                    elapsed = captTs - startTs;
+
             faceBuff.at(i)->buffWrite(
                         matFace, elapsed.count());
             foreheadBuff.at(i)->buffWrite(
                         channels[1], elapsed.count());
             flagReceivedNewImage = true;
+
             cv::rectangle(singleFrame, fh, cv::Scalar(255));
         }
         cv::rectangle(singleFrame, face, cv::Scalar(255));

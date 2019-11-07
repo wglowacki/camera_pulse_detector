@@ -29,10 +29,13 @@ public:
     AlgorithmThread(QObject* parent = nullptr);
     void setForeheadBuffer(
             QVector<std::shared_ptr<FrameBuffer>> &frameBuffer);
+
     void setImageReceivedFlag(bool& flagReceivedNewImage);
     void run() override;
 
 private:
+    const int BPM_FILTER_LOW = 55;
+    const int BPM_FILTER_HIGH = 150;
     int minSize = 30;
     QMutex threadMutex;
     QVector<std::shared_ptr<FrameBuffer>> foreheadBuff;
@@ -44,14 +47,19 @@ private:
     QVector<double> calcLinspaceTimes (
             int vectSize, double startT, double endT
     );
+
     std::vector<double> calcInterpMeans (
             const std::vector<double> & evenTimes,
             QVector<double>& means
     );
-    std::vector<gsl_complex> calcFFT(const std::vector<double>& vectMeans);
+
+    std::vector<gsl_complex>
+    calcFFT(const std::vector<double>& vectMeans);
+
     QVector<double> calcComplexFftAngles(
             const QVector<gsl_complex>& fftraw
     );
+
     std::vector<double> calcComplexFftAbs(
             const std::vector<gsl_complex>& fftraw
     );

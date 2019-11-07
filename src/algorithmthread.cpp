@@ -29,66 +29,66 @@ void AlgorithmThread::run()
         }
         flagReceivedNewImage = false;
         currentFHBuff = foreheadBuff;
-        auto meansVect = calcRoiMeans();
+        auto meansVect = calcRoiMeans(); //MOVE TO GPU
         int sampLen = meansVect.size();
 
         if(sampLen < minSize) {
             msleep(100);
             qDebug() << "Wait for buffer";
-        } else {
-            double startT = currentFHBuff.first()->buffer.first().second;
-            double endT = currentFHBuff.last()->buffer.last().second;
-            double timeDif = endT - startT;
-            if(timeDif <= 0.0) {
-                qDebug() << "Time difference: " << timeDif;
-                continue;
-            }
-            double freq = sampLen / timeDif;
-
-            auto vectEvenTimes =
-                    matrix_operations::calcLinspaceTimes(
-                        sampLen, startT, endT
-                    );
-            //auto vectEvenTimes = QVector<double>::fromStdVector(stdVectEven);
-            //Interpolate linspace mean values
-            auto vectInterpMeans = calcInterpMeans(
-                        vectEvenTimes, meansVect
-            );
-            auto hw = tools::createHammingWindow(sampLen);
-            auto vectHamMeans =
-                    matrix_operations::multiplyVecKernel (
-                        vectInterpMeans, hw
-                    );
-            auto normalizedMeans = tools::normalize(vectHamMeans);
-            // Get absolute values of FFT coefficients
-            auto vectfft = calcFFT(normalizedMeans);
-            auto vectfftAbs = calcComplexFftAbs(vectfft);
-            // Get indices of frequences that are less than 50 and greater than 150
-            auto filteredFreqs = getDesiredFreqs(sampLen, freq);
-            auto filteredIndexes = trimFreqs(filteredFreqs);
-
-            auto fftabs = trimVector(vectfftAbs, filteredIndexes);
-            auto freqs  = trimVector(filteredFreqs, filteredIndexes);
-
-            //CPU
-            /*
-            unsigned maxFftAbsIndex =
-                    static_cast<unsigned> (std::distance(fftabs.begin(),
-                    std::max_element(fftabs.begin(), fftabs.end()) ) );
-            */
-            //GPU
-            unsigned maxFftAbsIndex = matrix_operations::maxIndex(fftabs);
-
-            vectBPM.push_back(freqs.at(maxFftAbsIndex));
-            static int cnt = 0;
-            if(cnt > 5) {
-                updateBpm(vectBPM);
-                cnt = -1;
-            }
-            ++cnt;
-
-//            debugLog();
+            continue;
         }
+        double startT = currentFHBuff.first()->buffer.first().second;
+        double endT = currentFHBuff.last()->buffer.last().second;
+        double timeDif = endT - startT;
+        if(timeDif <= 0.0) {
+            qDebug() << "Time difference: " << timeDif;
+            continue;
+        }
+        double freq = sampLen / timeDif;
+
+        auto vectEvenTimes =
+                matrix_operations::calcLinspaceTimes(
+                    sampLen, startT, endT
+                );
+        //auto vectEvenTimes = QVector<double>::fromStdVector(stdVectEven);
+        //Interpolate linspace mean values
+        auto vectInterpMeans = calcInterpMeans(
+                    vectEvenTimes, meansVect
+        );
+        auto hw = tools::createHammingWindow(sampLen);
+        auto vectHamMeans =
+                matrix_operations::multiplyVecKernel (
+                    vectInterpMeans, hw
+                );
+        auto normalizedMeans = tools::normalize(vectHamMeans);
+        // Get absolute values of FFT coefficients
+        auto vectfft = calcFFT(normalizedMeans);
+        auto vectfftAbs = calcComplexFftAbs(vectfft);
+        // Get indices of frequences that are less than 50 and greater than 150
+        auto filteredFreqs = getDesiredFreqs(sampLen, freq);
+        auto filteredIndexes = trimFreqs(filteredFreqs);
+
+        auto fftabs = trimVector(vectfftAbs, filteredIndexes);
+        auto freqs  = trimVector(filteredFreqs, filteredIndexes);
+
+        //CPU
+        /*
+        unsigned maxFftAbsIndex =
+                static_cast<unsigned> (std::distance(fftabs.begin(),
+                std::max_element(fftabs.begin(), fftabs.end()) ) );
+        */
+        //GPU
+        unsigned maxFftAbsIndex = matrix_operations::maxIndex(fftabs);
+
+        vectBPM.push_back(freqs.at(maxFftAbsIndex));
+        static int cnt = 0;
+        if(cnt > 5) {
+            updateBpm(vectBPM);
+            cnt = -1;
+        }
+        ++cnt;
+
+//      debugLog();
     }
 }
 
@@ -160,12 +160,8 @@ std::vector<gsl_complex>
 AlgorithmThread::calcFFT(const std::vector<double>& vectMeans)
 {
     size_t size = vectMeans.size();
-//    qDebug() << "size";
-//    qDebug() << size;
     double data[size];
     std::copy(vectMeans.begin(), vectMeans.end(), data);
-//    qDebug() << data[1];
-//    qDebug() << data[size/2];
 
     gsl_complex_packed_array gslData = data;
     gsl_fft_real_wavetable* real = gsl_fft_real_wavetable_alloc(size);
@@ -173,25 +169,11 @@ AlgorithmThread::calcFFT(const std::vector<double>& vectMeans)
     gsl_fft_real_transform(data, 1, size, real, work);
     gsl_fft_real_wavetable_free(real);
     gsl_fft_real_workspace_free(work);
-//    qDebug() << data[1];
-//    qDebug() << data[size/2];
-    // Unpack complex numbers
     gsl_complex unpacked[size];
     gsl_fft_halfcomplex_unpack(data, (double*) unpacked, 1, size);
-    // Copy to  a vector
-    int unpacked_size = size / 2 + 1;
+//    int unpacked_size = size / 2 + 1;
     std::vector<gsl_complex> stdVect(unpacked, unpacked + size);
-//    QVector<gsl_complex> output =  QVector<gsl_complex>::fromStdVector(stdVect);
 
-//    for (int i=0; i<unpacked_size; i++) {
-//        qDebug() << output[i].dat[1];
-//        qDebug() << output[i].dat[0];
-//    }
-//    qDebug() << output[size/2].dat[0];
-//    qDebug() << "**************";
-//    qDebug() << "**************";
-//    qDebug() << "**************";
-//    qDebug() << "**************";
     return stdVect;
 }
 
@@ -199,10 +181,10 @@ QVector<double> AlgorithmThread::calcComplexFftAngles(
         const QVector<gsl_complex>& fftraw)
 {
     QVector<double> output;
-	for (auto&& fft : fftraw) {
+    for (auto&& fft : fftraw) {
         output.push_back( atan2(GSL_IMAG(fft), GSL_REAL(fft)) );
-	}
-	return output;
+    }
+    return output;
 }
 
 std::vector<double> AlgorithmThread::calcComplexFftAbs(
@@ -212,7 +194,7 @@ std::vector<double> AlgorithmThread::calcComplexFftAbs(
     for (auto&& fft : fftraw) {
         output.push_back(gsl_complex_abs(fft));
     }
-	return output;
+    return output;
 }
 
 std::vector<double>
@@ -233,9 +215,6 @@ AlgorithmThread::getDesiredFreqs(int size, double freq)
 std::vector<int>
 AlgorithmThread::trimFreqs(const std::vector<double>& genFreqs)
 {
-    // Filter out frequencies less than 50 and greater than 180
-    constexpr int BPM_FILTER_LOW = 50;
-    constexpr int BPM_FILTER_HIGH = 180;
     std::vector<int> filteredFreqs;
     for(int i = 0; i < genFreqs.size(); ++i)
     {
