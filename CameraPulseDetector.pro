@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui serialport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -9,6 +9,7 @@ CONFIG += c++14 release
 RESOURCES += ./qdarkstyle/style.qrc
 OBJECTS_DIR += build
 UI_DIR += ./ui
+
 
 INCLUDEPATH += . \
     /usr/local/include \
@@ -22,7 +23,8 @@ SOURCES += \
     src/functionsandtools.cpp \
     src/camerathread.cpp \
     src/framebuffer.cpp \
-    src/facedetectorthread.cpp
+    src/facedetectorthread.cpp \
+    src/referencesensor.cpp
 
 CUDA_OBJECTS_DIR = OBJECTS_DIR/cuda
 CUDA_SOURCES = src/matrixoperations.cu
@@ -57,7 +59,8 @@ HEADERS += \
     ./include/camerathread.h \
     ./include/framebuffer.h \
     ./include/facedetectorthread.h \
-    ./include/matrixoperations.h
+    ./include/matrixoperations.h \
+    ./include/referencesensor.h
 
 FORMS += \
      ./ui/mainwindow.ui

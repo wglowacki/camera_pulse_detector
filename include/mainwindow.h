@@ -11,6 +11,7 @@
 #include "algorithmthread.h"
 #include "functionsandtools.h"
 #include "framebuffer.h"
+#include "referencesensor.h"
 
 namespace Ui {
 class MainWindow;
@@ -25,10 +26,12 @@ public:
     ~MainWindow();
 
     void startCameraThread();
+    void changeReferenceSensStatus(int newState);
     void startPPMAlg();
     void currFpsVal(double value);
     void cameraDisconnected();
     void drawPixmap(QPixmap image);
+    void newSensorRead(int data);
     void setWindowStylesheet();
     void defineSignals();
     void openMovie();
@@ -44,7 +47,7 @@ private:
     CameraThread cameraThread;
 //    FaceDetectorThread _face_detector_thread;
     AlgorithmThread algorithmThread;
-//    ReferenceSensorThread _reference_sensor_thread;
+    ReferenceSensorThread refSensorThread;
     QVector<std::shared_ptr<FrameBuffer>>
         faceDetectedImageBuffer;
     QVector<std::shared_ptr<FrameBuffer>>

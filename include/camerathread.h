@@ -2,7 +2,7 @@
 #define CAMERA_THREAD_H
 
 #include <QThread>
-#include <QTime>
+#include <chrono>
 #include <QDebug>
 #include <memory>
 #include <opencv2/opencv.hpp>
@@ -41,8 +41,12 @@ public:
 private:
     bool endRequest = false;
     bool lockForeheadState = false;
-    QTime startTime = QTime::currentTime();
-    QTime endTime = QTime::currentTime();
+    typedef std::chrono::high_resolution_clock Time;
+    std::chrono::time_point<Time>  startTime = Time::now();
+    std::chrono::time_point<Time>  endTime = Time::now();
+    std::chrono::duration<double> timeDiff;
+//    QTime startTime = QTime::currentTime();
+//    QTime endTime = QTime::currentTime();
     std::chrono::time_point<std::chrono::system_clock>
         startTs = std::chrono::system_clock::now();
 

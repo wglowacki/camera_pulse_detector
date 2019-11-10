@@ -19,6 +19,9 @@ void CameraThread::run()
             videoStream->read(singleFrame);
             if (singleFrame.empty()) break;
         } else if(cameraStream->grab()) {
+//            VideoCapture::grab() //dla ts
+//                    tutaj liczony ts danej ramki
+//                    tutaj propsy: https://docs.opencv.org/2.4/modules/highgui/doc/reading_and_writing_images_and_video.html#videocapture-get
             cameraStream->retrieve(singleFrame);
         } else {
             continue;
@@ -30,8 +33,11 @@ void CameraThread::run()
 
             if(frameCnt >= 32) {
                 frameCnt = 0;
-                endTime = QTime::currentTime();
-                elapsedTime = tools::timeInSec(startTime, endTime);
+                endTime = Time::now();
+                timeDiff = endTime - startTime;
+                //elapsed mscs (with nanoseconds precision
+                elapsedTime = timeDiff.count();
+//                elapsedTime = tools::timeInSec(startTime, endTime);
                 double fps = 32.0 / elapsedTime;
                 emit currentFpsValue(fps);
                 startTime = endTime;

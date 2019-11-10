@@ -34,7 +34,7 @@ public:
     void run() override;
 
 private:
-    const int BPM_FILTER_LOW = 55;
+    const int BPM_FILTER_LOW   = 55;
     const int BPM_FILTER_HIGH = 150;
     int minSize = 30;
     QMutex threadMutex;

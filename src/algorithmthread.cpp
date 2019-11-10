@@ -44,6 +44,7 @@ void AlgorithmThread::run()
             qDebug() << "Time difference: " << timeDif;
             continue;
         }
+        qDebug() << "Time: " << timeDif;
         double freq = sampLen / timeDif;
 
         auto vectEvenTimes =

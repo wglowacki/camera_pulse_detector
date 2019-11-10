@@ -59,6 +59,10 @@ void MainWindow::defineSignals()
         this, &MainWindow::currFpsVal, Qt::QueuedConnection);
     connect(&cameraThread, &CameraThread::drawPixmap,
         this, &MainWindow::drawPixmap, Qt::QueuedConnection);
+    connect(&refSensorThread, &ReferenceSensorThread::publishData,
+        this, &MainWindow::newSensorRead, Qt::QueuedConnection);
+    connect(ui->referenceSensorEnableCheckbox, &QCheckBox::stateChanged,
+        this, &MainWindow::changeReferenceSensStatus, Qt::QueuedConnection);
 
     connect(this, &MainWindow::lockForehead,
         &cameraThread, &CameraThread::lockForehead, Qt::QueuedConnection);
@@ -84,6 +88,19 @@ void MainWindow::startCameraThread()
             "Camera already capturing frames.");
     }
     //implement camera selection;
+}
+
+void MainWindow::changeReferenceSensStatus(int newState)
+{
+    if(newState) {
+        refSensorThread.openSerialPort();
+        refSensorThread.start();
+    } else {
+        if(cameraThread.isRunning()) {
+            refSensorThread.quit();
+            refSensorThread.closeSerialPort();
+        }
+    }
 }
 
 void MainWindow::startPPMAlg()
@@ -123,6 +140,11 @@ void MainWindow::openMovie() {
     }
     cameraThread.readFromFile(fileName);
     cameraThread.start();
+}
+
+void MainWindow::newSensorRead(int data)
+{
+    ui->labelSensor->setText(QString::number(data));
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* key)
