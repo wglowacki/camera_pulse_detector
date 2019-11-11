@@ -5,6 +5,13 @@
 CameraThread::CameraThread()
 {
     cameraStream->set(CV_CAP_PROP_FPS, 15);
+    cameraStream->set(CV_CAP_PROP_FRAME_WIDTH, 640);
+    cameraStream->set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+
+    videoStream->set(CV_CAP_PROP_FPS, 15);
+    videoStream->set(CV_CAP_PROP_FRAME_WIDTH, 1280);
+    videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, 720);
+
 }
 void CameraThread::run()
 {
@@ -19,7 +26,8 @@ void CameraThread::run()
         if (videoStream->isOpened()) {
             auto captTs = std::chrono::system_clock::now();
             usFrameTs = (captTs - startTs);
-            videoStream->read(singleFrame);
+            if(videoStream->grab())
+                videoStream->read(singleFrame);
             if (singleFrame.empty()) break;
         } else if(cameraStream->grab()) {
             auto captTs = std::chrono::system_clock::now();
@@ -74,6 +82,8 @@ void CameraThread::setImageReceivedFlag(bool& sharedFlag)
 
 void CameraThread::sendFrameToDisplay(cv::Mat& frame)
 {
+
+    cv::resize(frame, frame, cv::Size(640, 480), 0, 0, cv::INTER_AREA);
     QPixmap pixmap;
     if (frame.channels()== 3) {
             cv::cvtColor(frame, frame, CV_BGR2RGB);
