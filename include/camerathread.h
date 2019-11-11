@@ -51,6 +51,7 @@ private:
         startTs = std::chrono::system_clock::now();
 
     double elapsedTime = 0.0;
+    std::chrono::duration<double> usFrameTs;
     std::unique_ptr<cv::VideoCapture> cameraStream
         = std::make_unique<cv::VideoCapture>(0);
     std::unique_ptr<cv::VideoCapture> videoStream

@@ -44,15 +44,12 @@ void AlgorithmThread::run()
             qDebug() << "Time difference: " << timeDif;
             continue;
         }
-        qDebug() << "Time: " << timeDif;
         double freq = sampLen / timeDif;
 
         auto vectEvenTimes =
                 matrix_operations::calcLinspaceTimes(
                     sampLen, startT, endT
                 );
-        //auto vectEvenTimes = QVector<double>::fromStdVector(stdVectEven);
-        //Interpolate linspace mean values
         auto vectInterpMeans = calcInterpMeans(
                     vectEvenTimes, meansVect
         );
@@ -63,8 +60,16 @@ void AlgorithmThread::run()
                 );
         auto normalizedMeans = tools::normalize(vectHamMeans);
         // Get absolute values of FFT coefficients
-        auto vectfft = calcFFT(normalizedMeans);
-        auto vectfftAbs = calcComplexFftAbs(vectfft);
+//        auto vectfft = calcFFT(normalizedMeans);
+//        auto vectfftAbs = calcComplexFftAbs(vectfft);
+        std::vector<double> vectfftAbs;
+
+        matrix_operations::gpuCalcFFT(normalizedMeans, vectfftAbs);
+        if(!vectfftAbs.size()) {
+//            std::cout << "error catched";
+            continue;
+        }
+//        std::cout << "here";
         // Get indices of frequences that are less than 50 and greater than 150
         auto filteredFreqs = getDesiredFreqs(sampLen, freq);
         auto filteredIndexes = trimFreqs(filteredFreqs);
@@ -158,13 +163,13 @@ AlgorithmThread::calcLinspaceTimes(
 }
 
 std::vector<gsl_complex>
-AlgorithmThread::calcFFT(const std::vector<double>& vectMeans)
+AlgorithmThread::calcFFT(std::vector<double>& vectMeans)
 {
     size_t size = vectMeans.size();
     double data[size];
     std::copy(vectMeans.begin(), vectMeans.end(), data);
 
-    gsl_complex_packed_array gslData = data;
+//    gsl_complex_packed_array gslData = data;
     gsl_fft_real_wavetable* real = gsl_fft_real_wavetable_alloc(size);
     gsl_fft_real_workspace* work = gsl_fft_real_workspace_alloc(size);
     gsl_fft_real_transform(data, 1, size, real, work);
@@ -172,8 +177,8 @@ AlgorithmThread::calcFFT(const std::vector<double>& vectMeans)
     gsl_fft_real_workspace_free(work);
     gsl_complex unpacked[size];
     gsl_fft_halfcomplex_unpack(data, (double*) unpacked, 1, size);
-//    int unpacked_size = size / 2 + 1;
-    std::vector<gsl_complex> stdVect(unpacked, unpacked + size);
+    int newSize = size / 2 + 1;
+    std::vector<gsl_complex> stdVect(unpacked, unpacked + newSize);
 
     return stdVect;
 }
@@ -203,8 +208,8 @@ AlgorithmThread::getDesiredFreqs(int size, double freq)
 {
     // Frequencies using spaced values within interval - L/2+1
     int newSize = (size / 2) + 1;
-    std::vector<double> genFreqs(newSize);
-    double freqGen = freq/newSize;
+    std::vector<double> genFreqs(size);
+    double freqGen = freq/size;
     int cnt=0;
     for(auto& freq : genFreqs)
     {

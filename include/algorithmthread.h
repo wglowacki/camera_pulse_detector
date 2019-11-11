@@ -36,7 +36,7 @@ public:
 private:
     const int BPM_FILTER_LOW   = 55;
     const int BPM_FILTER_HIGH = 150;
-    int minSize = 30;
+    int minSize = 50;
     QMutex threadMutex;
     QVector<std::shared_ptr<FrameBuffer>> foreheadBuff;
     QVector<std::shared_ptr<FrameBuffer>> currentFHBuff;
@@ -54,7 +54,7 @@ private:
     );
 
     std::vector<gsl_complex>
-    calcFFT(const std::vector<double>& vectMeans);
+    calcFFT(std::vector<double> &vectMeans);
 
     QVector<double> calcComplexFftAngles(
             const QVector<gsl_complex>& fftraw

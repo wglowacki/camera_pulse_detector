@@ -1,9 +1,10 @@
 #include "camerathread.h"
 #include <QPixmap>
+#include <limits>
 
 CameraThread::CameraThread()
 {
-    cameraStream->set(CV_CAP_PROP_FPS, 20);
+    cameraStream->set(CV_CAP_PROP_FPS, 15);
 }
 void CameraThread::run()
 {
@@ -16,12 +17,13 @@ void CameraThread::run()
     while(true)
     {
         if (videoStream->isOpened()) {
+            auto captTs = std::chrono::system_clock::now();
+            usFrameTs = (captTs - startTs);
             videoStream->read(singleFrame);
             if (singleFrame.empty()) break;
         } else if(cameraStream->grab()) {
-//            VideoCapture::grab() //dla ts
-//                    tutaj liczony ts danej ramki
-//                    tutaj propsy: https://docs.opencv.org/2.4/modules/highgui/doc/reading_and_writing_images_and_video.html#videocapture-get
+            auto captTs = std::chrono::system_clock::now();
+            usFrameTs = (captTs - startTs);
             cameraStream->retrieve(singleFrame);
         } else {
             continue;
@@ -35,9 +37,7 @@ void CameraThread::run()
                 frameCnt = 0;
                 endTime = Time::now();
                 timeDiff = endTime - startTime;
-                //elapsed mscs (with nanoseconds precision
                 elapsedTime = timeDiff.count();
-//                elapsedTime = tools::timeInSec(startTime, endTime);
                 double fps = 32.0 / elapsedTime;
                 emit currentFpsValue(fps);
                 startTime = endTime;
@@ -115,14 +115,10 @@ void CameraThread::detectFacesOnFrame()
                         matFh.rows, matFh.cols, CV_8UC1);
             cv::merge(channels,3,matFh);
 
-            auto captTs = std::chrono::system_clock::now();
-            std::chrono::duration<double>
-                    elapsed = captTs - startTs;
-
             faceBuff.at(i)->buffWrite(
-                        matFace, elapsed.count());
+                        matFace, usFrameTs.count());
             foreheadBuff.at(i)->buffWrite(
-                        channels[1], elapsed.count());
+                        channels[1], usFrameTs.count());
             flagReceivedNewImage = true;
 
             cv::rectangle(singleFrame, fh, cv::Scalar(255));

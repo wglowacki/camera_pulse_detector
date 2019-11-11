@@ -21,6 +21,9 @@ namespace matrix_operations
     multiplyVec( const std::vector<double>& first,
                  const std::vector<double>& second);
 
+    void gpuCalcFFT(const std::vector<double> &vectMeans,
+                    std::vector<double> &absVect);
+
     std::vector<double>
     multiplyVecKernel( const std::vector<double>& first,
                        const std::vector<double>& second);

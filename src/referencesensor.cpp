@@ -13,7 +13,7 @@ void ReferenceSensorThread::run()
     {
         if(port.canReadLine()) {
             int read = port.readLine().simplified().toInt();
-            qDebug() << read;
+//            qDebug() << read;
             publishData(read);
         }
         msleep(200);

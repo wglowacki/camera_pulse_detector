@@ -31,7 +31,7 @@ CUDA_SOURCES = src/matrixoperations.cu
 CUDA_DIR = /usr/local/cuda
 INCLUDEPATH  += $$CUDA_DIR/include
 QMAKE_LIBDIR += $$CUDA_DIR/lib64
-LIBS += -lcudart -lcuda
+LIBS += -lcudart -lcuda -lcufft
 # GPU architecture
 CUDA_ARCH = sm_30
 NVCCFLAGS = --compiler-options -fno-strict-aliasing -use_fast_math --ptxas-options=-v
