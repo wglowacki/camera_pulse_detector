@@ -10,11 +10,11 @@ RESOURCES += ./qdarkstyle/style.qrc
 OBJECTS_DIR += build
 UI_DIR += ./ui
 
-
 INCLUDEPATH += . \
     /usr/local/include \
-    ./include
-    ./src
+    /usr/local/opencv/include \
+    /opt/pylon5/include \
+    ./include \
 
 SOURCES += \
     main.cpp \
@@ -22,6 +22,7 @@ SOURCES += \
     src/algorithmthread.cpp \
     src/functionsandtools.cpp \
     src/camerathread.cpp \
+    src/camerapylon.cpp \
     src/framebuffer.cpp \
     src/facedetectorthread.cpp \
     src/referencesensor.cpp
@@ -57,6 +58,7 @@ HEADERS += \
     ./include/algorithmthread.h \
     ./include/functionsandtools.h \
     ./include/camerathread.h \
+    ./include/camerapylon.h \
     ./include/framebuffer.h \
     ./include/facedetectorthread.h \
     ./include/matrixoperations.h \
@@ -68,8 +70,11 @@ FORMS += \
 
 LIBS += -L$$CUDA_DIR/lib64 -lcuda -lcudart
 LIBS += \
+    -L"/opt/pylon5/lib64" \
     -L/usr/local/lib \
+    -L/usr/local/opencv/lib \
     -lopencv_core -lopencv_highgui -lopencv_calib3d \
     -lopencv_videoio -lopencv_imgproc -lopencv_imgcodecs \
     -lopencv_cudaimgproc -lopencv_cudaobjdetect \
-    -lgsl -lgslcblas
+    -lgsl -lgslcblas \
+    -lpylonutility -lpylonbase -lGCBase_gcc_v3_1_Basler_pylon

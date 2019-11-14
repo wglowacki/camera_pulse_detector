@@ -4,6 +4,8 @@
 
 CameraThread::CameraThread()
 {
+
+#ifndef READ_PYLON
     cameraStream->set(CV_CAP_PROP_FPS, 15);
     cameraStream->set(CV_CAP_PROP_FRAME_WIDTH, 640);
     cameraStream->set(CV_CAP_PROP_FRAME_HEIGHT, 480);
@@ -12,14 +14,22 @@ CameraThread::CameraThread()
     videoStream->set(CV_CAP_PROP_FRAME_WIDTH, 1280);
     videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, 720);
 
+#else
+    cascadeGpu->setScaleFactor(3.2);
+#endif
 }
 void CameraThread::run()
 {
+
+#ifndef READ_PYLON
     if(!cameraStream->isOpened()) {
         tools::dispQMsg("Camera error",
             "Cannot connect to camera. Camera thread ends");
         emit cameraDisconnected();
     }
+#else
+    pylonCamera.openCam();
+#endif
     endRequest = false;
     while(true)
     {
@@ -29,11 +39,23 @@ void CameraThread::run()
             if(videoStream->grab())
                 videoStream->read(singleFrame);
             if (singleFrame.empty()) break;
-        } else if(cameraStream->grab()) {
+        }
+#ifndef READ_PYLON
+        else if(cameraStream->grab()) {
             auto captTs = std::chrono::system_clock::now();
             usFrameTs = (captTs - startTs);
             cameraStream->retrieve(singleFrame);
-        } else {
+        }
+#else
+        else if( pylonCamera.isOpened() ) {
+            pylonCamera.getCvFrame(singleFrame, grabTs);
+            if(singleFrame.empty()) {
+                msleep(200);
+                continue;
+            }
+        }
+#endif
+        else {
             continue;
         }
             detectFacesOnFrame();
@@ -107,7 +129,6 @@ void CameraThread::detectFacesOnFrame()
         cascadeGpu->detectMultiScale(imageGpu, objBuf);
         cascadeGpu->convert(objBuf, detectedFaces);
     }
-
     uint8_t i = 0;
     for (auto const& face: detectedFaces)
     {

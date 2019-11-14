@@ -1,6 +1,7 @@
 #include "../include/matrixoperations.h"
 #include <opencv2/opencv.hpp>
 #include <thrust/extrema.h>
+#include <thrust/device_vector.h>
 #include <cufft.h>
 #include <cuComplex.h>
 #include <math.h>
