@@ -15,7 +15,7 @@ CameraThread::CameraThread()
     videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, 720);
 
 #else
-    cascadeGpu->setScaleFactor(3.2);
+    cascadeGpu->setScaleFactor(1.2);
 #endif
 }
 void CameraThread::run()
@@ -34,6 +34,7 @@ void CameraThread::run()
     while(true)
     {
         if (videoStream->isOpened()) {
+
             auto captTs = std::chrono::system_clock::now();
             usFrameTs = (captTs - startTs);
             if(videoStream->grab())
@@ -48,7 +49,7 @@ void CameraThread::run()
         }
 #else
         else if( pylonCamera.isOpened() ) {
-            pylonCamera.getCvFrame(singleFrame, grabTs);
+            pylonCamera.getCvFrame(singleFrame, pylonTs);
             if(singleFrame.empty()) {
                 msleep(200);
                 continue;
@@ -146,10 +147,16 @@ void CameraThread::detectFacesOnFrame()
                         matFh.rows, matFh.cols, CV_8UC1);
             cv::merge(channels,3,matFh);
 
+#ifndef READ_PYLON
             faceBuff.at(i)->buffWrite(
                         matFace, usFrameTs.count());
             foreheadBuff.at(i)->buffWrite(
                         channels[1], usFrameTs.count());
+#else
+            double castedTime = static_cast<double>(pylonTs/1000)/10000000;
+            faceBuff.at(i)->buffWrite(  matFace, castedTime);
+            foreheadBuff.at(i)->buffWrite( channels[1], castedTime);
+#endif
             flagReceivedNewImage = true;
 
             cv::rectangle(singleFrame, fh, cv::Scalar(255));

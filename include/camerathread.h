@@ -10,8 +10,7 @@
 #include "functionsandtools.h"
 #include "framebuffer.h"
 
-
-//#define READ_PYLON
+#define READ_PYLON
 #ifdef READ_PYLON
 #include "camerapylon.h"
 #endif
@@ -59,6 +58,7 @@ private:
     double elapsedTime = 0.0;
     std::chrono::duration<double> usFrameTs;
     double grabTs = 0.0;
+    uint64_t pylonTs = 0.0;
 #ifndef READ_PYLON
     std::unique_ptr<cv::VideoCapture> cameraStream
         = std::make_unique<cv::VideoCapture>(0);

@@ -16,7 +16,7 @@ public:
     void setConfigData();
     void openCam();
     bool isOpened();
-    void getCvFrame(cv::Mat& singleFrame, double& exposureTime);
+    void getCvFrame(cv::Mat& singleFrame, uint64_t& exposureTime);
 
 private:
     std::shared_ptr<Pylon::CInstantCamera> camera;

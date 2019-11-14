@@ -38,6 +38,10 @@ void AlgorithmThread::run()
             continue;
         }
         double startT = currentFHBuff.first()->buffer.first().second;
+        qDebug() << currentFHBuff.first()->buffer.first().second << " "
+                 << currentFHBuff.first()->buffer.at(1).second   << " "
+                 << currentFHBuff.first()->buffer.at(2).second   << " "
+                 << currentFHBuff.first()->buffer.at(3).second   << " ";
         double endT = currentFHBuff.last()->buffer.last().second;
         double timeDif = endT - startT;
         if(timeDif <= 0.0) {
@@ -45,6 +49,7 @@ void AlgorithmThread::run()
             continue;
         }
         double freq = sampLen / timeDif;
+//        qDebug() << freq << ", freq. TimeDif: " << timeDif;
 
         auto vectEvenTimes =
                 matrix_operations::calcLinspaceTimes(
@@ -84,7 +89,6 @@ void AlgorithmThread::run()
         */
         //GPU
         unsigned maxFftAbsIndex = matrix_operations::maxIndex(fftabs);
-
         vectBPM.push_back(freqs.at(maxFftAbsIndex));
         static int cnt = 0;
         if(cnt > 5) {
@@ -205,7 +209,7 @@ std::vector<double>
 AlgorithmThread::getDesiredFreqs(int size, double freq)
 {
     // Frequencies using spaced values within interval - L/2+1
-    int newSize = (size / 2) + 1;
+//    int newSize = (size / 2) + 1;
     std::vector<double> genFreqs(size);
     double freqGen = freq/size;
     int cnt=0;

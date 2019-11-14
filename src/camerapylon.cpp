@@ -40,7 +40,7 @@ bool CameraPylon::isOpened()
 }
 
 
-void CameraPylon::getCvFrame(cv::Mat& singleFrame, double& exposureTime)
+void CameraPylon::getCvFrame(cv::Mat& singleFrame, uint64_t& exposureTime)
 {
     if(!camera->IsGrabbing()) {
         cv::Mat pylonCvImg;
@@ -50,9 +50,8 @@ void CameraPylon::getCvFrame(cv::Mat& singleFrame, double& exposureTime)
     camera->RetrieveResult( 5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
     // Access the image data.
     const uint8_t *pImageBuffer = (uint8_t *) ptrGrabResult->GetBuffer();
-    exposureTime = ptrGrabResult->GetTimeStamp() / std::pow(10, 7);
-    uint64_t a = ptrGrabResult->GetTimeStamp();
-    std::cout << exposureTime << " " << a << "\n";
+    static const int cameraTic = 8; //duration of one camera tick in ns.
+    exposureTime = ptrGrabResult->GetTimeStamp() * cameraTic;
     //CV
     opencvConverter.Convert(cvImgHandler, ptrGrabResult);
     singleFrame = cv::Mat( ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(),
