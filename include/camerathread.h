@@ -92,7 +92,7 @@ private:
     int droppedFramesCounter = 0;
     QMutex lockMutex, readMutex;
     std::string pathToHaarDetector
-        = "/home/agh/camera_pulse_detector/classifiers/haarcascade_frontalface_alt.xml";
+        = "../classifiers/haarcascade_frontalface_alt.xml";
     cv::Ptr<cv::cuda::CascadeClassifier> cascadeGpu
         = cv::cuda::CascadeClassifier::create(pathToHaarDetector);
 
