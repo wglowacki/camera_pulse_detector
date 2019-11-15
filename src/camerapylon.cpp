@@ -50,7 +50,7 @@ void CameraPylon::getCvFrame(cv::Mat& singleFrame, uint64_t& exposureTime)
     camera->RetrieveResult( 5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
     // Access the image data.
     const uint8_t *pImageBuffer = (uint8_t *) ptrGrabResult->GetBuffer();
-    static const int cameraTic = 8; //duration of one camera tick in ns.
+    static const int cameraTic = 1; //duration of one camera tick in ns.
     exposureTime = ptrGrabResult->GetTimeStamp() * cameraTic;
     //CV
     opencvConverter.Convert(cvImgHandler, ptrGrabResult);

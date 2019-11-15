@@ -17,6 +17,7 @@ AlgorithmThread::AlgorithmThread(QObject * parent)
 
 void AlgorithmThread::run()
 {
+    QMutex mtx;
     while(true)
     {
 
@@ -38,10 +39,6 @@ void AlgorithmThread::run()
             continue;
         }
         double startT = currentFHBuff.first()->buffer.first().second;
-        qDebug() << currentFHBuff.first()->buffer.first().second << " "
-                 << currentFHBuff.first()->buffer.at(1).second   << " "
-                 << currentFHBuff.first()->buffer.at(2).second   << " "
-                 << currentFHBuff.first()->buffer.at(3).second   << " ";
         double endT = currentFHBuff.last()->buffer.last().second;
         double timeDif = endT - startT;
         if(timeDif <= 0.0) {
@@ -90,6 +87,18 @@ void AlgorithmThread::run()
         //GPU
         unsigned maxFftAbsIndex = matrix_operations::maxIndex(fftabs);
         vectBPM.push_back(freqs.at(maxFftAbsIndex));
+
+        if(saveFlag) {
+            mtx.lock();
+            auto t = std::time(nullptr);
+            auto tm = *std::localtime(&t);
+            std::ostringstream oss;
+            oss << std::put_time(&tm, "%M-%S");
+            std::string timeStamp = oss.str();
+            saveFile << timeStamp << " " << vectBPM.back() << "\n";
+            mtx.unlock();
+        }
+
         static int cnt = 0;
         if(cnt > 5) {
             updateBpm(vectBPM);
@@ -272,11 +281,31 @@ AlgorithmThread::calcInterpMeans(const std::vector<double>& evenTimes,
     return interpRes;
 }
 
+void AlgorithmThread::startSaveStatus(bool sf, std::string fn)
+{
+    QMutex mtx;
+    mtx.lock();
+    saveFlag = sf;
+    if(saveFlag) {
+        if(saveFile.is_open()) {
+            saveFile.close();
+        }
+        std::string name = "algorithm_" + fn + ".txt";
+        saveFile.open(name);
+        saveFlag = true;
+    }
+    else {
+        saveFlag = false;
+        saveFile.close();
+    }
+    mtx.unlock();
+}
+
 void AlgorithmThread::updateBpm(const std::vector<double>& v)
 {
     double ret = 0;
-    if(v.size() > 20) {
-        ret = std::accumulate( v.end()-20, v.end(), 0.0) / 20;
+    if(v.size() > 10) {
+        ret = std::accumulate( v.end()-10, v.end(), 0.0) / 10;
     }
     bpsUpdate(ret);
 }
@@ -293,5 +322,8 @@ void AlgorithmThread::debugLog()
 
 void AlgorithmThread::end()
 {
+    saveFlag = false;
+    saveFile.close();
+    bpmFile.close();
 
 }

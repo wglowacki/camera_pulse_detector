@@ -34,6 +34,7 @@ public:
                         <FrameBuffer> >& frameBuffer);
     void setImageReceivedFlag(bool& flagReceivedNewImage);
     void sendFrameToDisplay(cv::Mat& frame);
+    void startSaveStatus(bool newState, std::string fn);
     void detectFacesOnFrame();
     bool isCameraAvailable();
     cv::Mat readFrame(cv::Mat& frame);
@@ -50,15 +51,14 @@ private:
     std::chrono::time_point<Time>  startTime = Time::now();
     std::chrono::time_point<Time>  endTime = Time::now();
     std::chrono::duration<double> timeDiff;
-//    QTime startTime = QTime::currentTime();
-//    QTime endTime = QTime::currentTime();
     std::chrono::time_point<std::chrono::system_clock>
         startTs = std::chrono::system_clock::now();
-
     double elapsedTime = 0.0;
     std::chrono::duration<double> usFrameTs;
     double grabTs = 0.0;
     uint64_t pylonTs = 0.0;
+    bool saveStatus = false;
+    cv::VideoWriter savedVideo;
 #ifndef READ_PYLON
     std::unique_ptr<cv::VideoCapture> cameraStream
         = std::make_unique<cv::VideoCapture>(0);
@@ -72,10 +72,7 @@ private:
     QVector<std::shared_ptr<FrameBuffer>> foreheadBuff;
     bool flagReceivedNewImage = false;
     QTime captTime;
-
-
     std::vector<cv::Rect> detectedFaces;
-
     QVector<QVector
         <std::shared_ptr<FrameBuffer>>> vectOfAllFace;
     QVector<QVector

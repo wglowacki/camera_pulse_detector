@@ -4,23 +4,20 @@
 
 CameraThread::CameraThread()
 {
-
 #ifndef READ_PYLON
-    cameraStream->set(CV_CAP_PROP_FPS, 15);
-    cameraStream->set(CV_CAP_PROP_FRAME_WIDTH, 640);
-    cameraStream->set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+    cameraStream->set(CV_CAP_PROP_FPS, 20);
+//    videoStream->set(CV_CAP_PROP_FRAME_WIDTH, 1280);
+//    videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, 720);
 
-    videoStream->set(CV_CAP_PROP_FPS, 15);
-    videoStream->set(CV_CAP_PROP_FRAME_WIDTH, 1280);
-    videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, 720);
+    videoStream->set(CV_CAP_PROP_FPS, 20);
 
 #else
-    cascadeGpu->setScaleFactor(1.2);
+    cascadeGpu->setScaleFactor(1.4);
 #endif
 }
 void CameraThread::run()
 {
-
+    QMutex mtx;
 #ifndef READ_PYLON
     if(!cameraStream->isOpened()) {
         tools::dispQMsg("Camera error",
@@ -59,6 +56,11 @@ void CameraThread::run()
         else {
             continue;
         }
+            if(saveStatus) {
+                mtx.lock();
+                savedVideo.write(singleFrame);
+                mtx.unlock();
+            }
             detectFacesOnFrame();
             sendFrameToDisplay(singleFrame);
 
@@ -101,6 +103,37 @@ void CameraThread::setForeheadBuffer(
 void CameraThread::setImageReceivedFlag(bool& sharedFlag)
 {
     flagReceivedNewImage = sharedFlag;
+}
+
+void CameraThread::startSaveStatus(bool saveFlag, std::string fn)
+{
+    QMutex mtx;
+    mtx.lock();
+    if(saveFlag) {
+        if(savedVideo.isOpened()) {
+            savedVideo.release();
+        }
+        while(savedVideo.isOpened())
+        {
+            msleep(50);
+        }
+        saveStatus = true;
+        std::string vname = "video_" + fn + ".avi";
+
+        int width = 640, height = 480;
+#ifdef READ_PYLON
+        width =  1020;
+        height = 1023;
+
+#endif
+        savedVideo.open(vname, CV_FOURCC('H','2','6','4'),
+                        20, cv::Size(width, height));
+    }
+    else {
+        saveStatus = false;
+        savedVideo.release();
+    }
+    mtx.unlock();
 }
 
 void CameraThread::sendFrameToDisplay(cv::Mat& frame)
@@ -186,4 +219,6 @@ void CameraThread::lockForehead(bool state)
 
 void CameraThread::end() {
     endRequest = true;
+    saveStatus = false;
+    savedVideo.release();
 }

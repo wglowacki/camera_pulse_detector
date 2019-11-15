@@ -31,9 +31,12 @@ public:
             QVector<std::shared_ptr<FrameBuffer>> &frameBuffer);
 
     void setImageReceivedFlag(bool& flagReceivedNewImage);
+    void startSaveStatus(bool saveFlag, std::string fn);
     void run() override;
 
 private:
+    bool saveFlag = false;
+    std::ofstream saveFile;
     const int BPM_FILTER_LOW   = 55;
     const int BPM_FILTER_HIGH = 150;
     int minSize = 50;
@@ -41,6 +44,7 @@ private:
     QVector<std::shared_ptr<FrameBuffer>> foreheadBuff;
     QVector<std::shared_ptr<FrameBuffer>> currentFHBuff;
     bool flagReceivedNewImage = false;
+    std::ofstream bpmFile;
     std::vector<double> vectBPM;
 
     QVector<double> calcRoiMeans();

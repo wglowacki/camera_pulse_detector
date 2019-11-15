@@ -1,6 +1,8 @@
 #include "referencesensor.h"
 #include <QDebug>
 #include <QRegExp>
+#include <iomanip>
+#include <QMutex>
 
 ReferenceSensorThread::ReferenceSensorThread()
 {
@@ -9,11 +11,21 @@ ReferenceSensorThread::ReferenceSensorThread()
 
 void ReferenceSensorThread::run()
 {
+    QMutex mtx;
     while(true)
     {
         if(port.canReadLine()) {
-            int read = port.readLine().simplified().toInt();
-//            qDebug() << read;
+            QString read = port.readLine().simplified();
+            if(saveFlag) {
+                mtx.lock();
+                auto t = std::time(nullptr);
+                auto tm = *std::localtime(&t);
+                std::ostringstream oss;
+                oss << std::put_time(&tm, "%M-%S");
+                std::string timeStamp = oss.str();
+                saveFile << timeStamp << " " << read.toStdString() << "\n";
+                mtx.unlock();
+            }
             publishData(read);
         }
         msleep(200);
@@ -41,7 +53,29 @@ void ReferenceSensorThread::openSerialPort()
     }
 }
 
+void ReferenceSensorThread::startSaveStatus(bool sf, std::string fn)
+{
+    QMutex mtx;
+    mtx.lock();
+    saveFlag = sf;
+    if(saveFlag) {
+        if(saveFile.is_open()) {
+            saveFile.close();
+        }
+        std::string name = "sensor_" + fn + ".txt";
+        saveFile.open(name);
+        saveFlag = true;
+    }
+    else {
+        saveFlag = false;
+        saveFile.close();
+    }
+    mtx.unlock();
+}
+
 void ReferenceSensorThread::closeSerialPort()
 {
     port.close();
+    saveFlag = false;
+    saveFile.close();
 }
