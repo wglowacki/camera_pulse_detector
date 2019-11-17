@@ -31,6 +31,7 @@ void AlgorithmThread::run()
         currentFHBuff = foreheadBuff;
         auto meansVect = calcRoiMeans(); //MOVE TO GPU
         int sampLen = meansVect.size();
+        detrendSignal(meansVect, sampLen);
 
         if(sampLen < minSize) {
             msleep(100);
@@ -98,6 +99,7 @@ void AlgorithmThread::run()
     }
 }
 
+
 std::vector<double>
 AlgorithmThread::trimVector ( const std::vector<double>& data,
                               const std::vector<int>& ind )
@@ -108,6 +110,36 @@ AlgorithmThread::trimVector ( const std::vector<double>& data,
         trimmed.push_back(data.at(i));
     }
     return trimmed;
+}
+
+void AlgorithmThread::detrendSignal(std::vector<double>& means, int size)
+{
+    std::vector<double> detrendedMeans;
+    int kernel = 5;
+    for (int i=0; i< size; ++i)
+    {
+        if(i<5) {
+            detrendedMeans.push_back(
+                means.at(i) - 1/(2*kernel+1) *
+                        std::accumulate( means.begin()+i,
+                                         means.begin()+(i+2*kernel), 0.0)
+            );
+        } else if (i < size-5) {
+            detrendedMeans.push_back(
+                means.at(i) - 1/(2*kernel+1) *
+                        std::accumulate( means.begin()+(i-kernel),
+                                         means.begin()+(i+kernel), 0.0)
+            );
+        } else {
+            detrendedMeans.push_back(
+                means.at(i) - 1/(2*kernel+1) *
+                    std::accumulate( means.end()-(i+2*kernel),
+                                     means.end()-i, 0.0)
+            );
+        }
+
+    }
+    means = detrendedMeans;
 }
 
 void AlgorithmThread::setForeheadBuffer(
@@ -121,11 +153,11 @@ void AlgorithmThread::setImageReceivedFlag(bool& sharedFlag)
     flagReceivedNewImage = sharedFlag;
 }
 
-QVector<double> AlgorithmThread::calcRoiMeans()
+std::vector<double> AlgorithmThread::calcRoiMeans()
 {
     threadMutex.lock();
-    QVector<QVector<double>> meansVect;
-    QVector<double> singleVect;
+    std::vector<std::vector<double>> meansVect;
+    std::vector<double> singleVect;
     int i = 0;
     std::for_each(currentFHBuff.begin(), currentFHBuff.end(),
               [&](std::shared_ptr<FrameBuffer> fh)
@@ -143,7 +175,7 @@ QVector<double> AlgorithmThread::calcRoiMeans()
         singleVect.clear();
     });
     threadMutex.unlock();
-    return meansVect.first();
+    return meansVect.front();
 }
 
 QVector<double>
@@ -235,7 +267,7 @@ AlgorithmThread::trimFreqs(const std::vector<double>& genFreqs)
 
 std::vector<double>
 AlgorithmThread::calcInterpMeans(const std::vector<double>& evenTimes,
-                                 QVector<double>& means )
+                                 std::vector<double>& means )
 {
     //https://www.gnu.org/software/gsl/doc/html/interp.html
     assert (evenTimes.size() == means.size());
