@@ -31,16 +31,19 @@ public:
     void sendFrameToDisplay(cv::Mat& frame);
     void detectFacesOnFrame();
     bool isCameraAvailable();
+    void changeInertia(int newValue);
     cv::Mat readFrame(cv::Mat& frame);
     void readFromFile(QString fn);
     bool writeFramesBuffer(cv::Mat& frame);
     bool readFramesBuffer(cv::Mat& frame);
     void lockForehead(bool state);
+    void changeMinBuffer(int newValue);
     void run() override;
 
 private:
     bool endRequest = false;
     bool lockForeheadState = false;
+    cv::Rect prevFace = {0,0,0,0};
     typedef std::chrono::high_resolution_clock Time;
     std::chrono::time_point<Time>  startTime = Time::now();
     std::chrono::time_point<Time>  endTime = Time::now();
@@ -62,7 +65,7 @@ private:
     bool flagReceivedNewImage = false;
     QTime captTime;
 
-
+    int inertia = 15;
     std::vector<cv::Rect> detectedFaces;
 
     QVector<QVector
@@ -88,6 +91,7 @@ private:
     cv::Ptr<cv::cuda::CascadeClassifier> cascadeGpu
         = cv::cuda::CascadeClassifier::create(pathToHaarDetector);
 
+    bool checkIfShouldBeUpdated(const cv::Rect& face);
     cv::Rect extractForehead(const cv::Rect& face);
 };
 

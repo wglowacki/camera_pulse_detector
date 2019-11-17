@@ -29,7 +29,7 @@ void AlgorithmThread::run()
         }
         flagReceivedNewImage = false;
         currentFHBuff = foreheadBuff;
-        auto meansVect = calcRoiMeans(); //MOVE TO GPU
+        auto meansVect = calcRoiMeans();
         int sampLen = meansVect.size();
         detrendSignal(meansVect, sampLen);
 
@@ -156,26 +156,20 @@ void AlgorithmThread::setImageReceivedFlag(bool& sharedFlag)
 std::vector<double> AlgorithmThread::calcRoiMeans()
 {
     threadMutex.lock();
-    std::vector<std::vector<double>> meansVect;
-    std::vector<double> singleVect;
+    std::vector<double> meansVect;
     int i = 0;
-    std::for_each(currentFHBuff.begin(), currentFHBuff.end(),
-              [&](std::shared_ptr<FrameBuffer> fh)
+    std::for_each(
+        currentFHBuff.front()->buffer.begin(),
+        currentFHBuff.front()->buffer.end(),
+        [&](std::pair<cv::Mat, int> frame)
     {
-        std::for_each(fh->buffer.begin(), fh->buffer.end(),
-            [&](std::pair<cv::Mat, int> frame)
-        {
-            cv::Mat cvMat = frame.first;
-            auto scalarMeans = cv::mean(cvMat);
-            singleVect.push_back(scalarMeans.val[i]);
-        }
-        );
-        meansVect.push_back(singleVect);
-        ++i;
-        singleVect.clear();
-    });
+        cv::Mat cvMat = frame.first;
+        auto scalarMeans = cv::mean(cvMat);
+        meansVect.push_back(scalarMeans.val[i]);
+    }
+    );
     threadMutex.unlock();
-    return meansVect.front();
+    return meansVect;
 }
 
 QVector<double>
