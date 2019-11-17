@@ -115,7 +115,7 @@ AlgorithmThread::trimVector ( const std::vector<double>& data,
 void AlgorithmThread::detrendSignal(std::vector<double>& means, int size)
 {
     std::vector<double> detrendedMeans;
-    int kernel = 5;
+    int kernel = 15;
     for (int i=0; i< size; ++i)
     {
         if(i<5) {

@@ -27,10 +27,20 @@ std::vector<double> tools::createHammingWindow(int len)
 
 std::vector<double> tools::normalize(const std::vector<double>& vect)
 {
+    double sum = std::accumulate(vect.begin(), vect.end(), 0.0);
+    double mean = sum / vect.size();
+
+    std::vector<double> diff(vect.size());
+    std::transform(vect.begin(), vect.end(), diff.begin(),
+                   std::bind2nd(std::minus<double>(), mean));
+    double sqSum = std::inner_product(diff.begin(), diff.end(),
+                                      diff.begin(), 0.0);
+    double stdev = std::sqrt(sqSum / vect.size());
+
     std::vector<double> retVect;
-    double mean = std::accumulate(vect.begin(),vect.end(),0.0)/vect.size();
-    for (auto i : vect) {
-        retVect.push_back((i-mean));
+//    double mean = std::accumulate(vect.begin(),vect.end(),0.0)/vect.size();
+    for (auto& i : vect) {
+        retVect.push_back((i-mean)/stdev);
     }
     return retVect;
 }

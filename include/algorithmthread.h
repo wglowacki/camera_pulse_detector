@@ -35,7 +35,7 @@ public:
 
 private:
     const int BPM_FILTER_LOW   = 55;
-    const int BPM_FILTER_HIGH = 150;
+    const int BPM_FILTER_HIGH = 170;
     int minSize = 50;
     QMutex threadMutex;
     QVector<std::shared_ptr<FrameBuffer>> foreheadBuff;

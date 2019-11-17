@@ -41,6 +41,11 @@ public:
     void run() override;
 
 private:
+    struct CaptureProperties {
+        int width  = 640;
+        int height = 480;
+        int fps    =  15;
+    };
     bool endRequest = false;
     bool lockForeheadState = false;
     cv::Rect prevFace = {0,0,0,0};
@@ -53,6 +58,7 @@ private:
     std::chrono::time_point<std::chrono::system_clock>
         startTs = std::chrono::system_clock::now();
 
+    QTime movieFps;
     double elapsedTime = 0.0;
     std::chrono::duration<double> usFrameTs;
     std::unique_ptr<cv::VideoCapture> cameraStream
@@ -81,6 +87,7 @@ private:
         double h = 0.20;
     } foreheadPos;
 
+    CaptureProperties cameraProp{640, 480, 15}, videoProp{640, 480, 15};
     cv::Mat singleFrame;
     uint8_t frameCnt = 0;
     uint8_t bufferSize = 60;

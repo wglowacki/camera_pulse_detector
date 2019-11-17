@@ -4,13 +4,13 @@
 
 CameraThread::CameraThread()
 {
-    cameraStream->set(CV_CAP_PROP_FPS, 15);
-    cameraStream->set(CV_CAP_PROP_FRAME_WIDTH, 640);
-    cameraStream->set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+    cameraStream->set(CV_CAP_PROP_FPS, cameraProp.fps);
+    cameraStream->set(CV_CAP_PROP_FRAME_WIDTH, cameraProp.width);
+    cameraStream->set(CV_CAP_PROP_FRAME_HEIGHT, cameraProp.height);
 
-    videoStream->set(CV_CAP_PROP_FPS, 15);
-    videoStream->set(CV_CAP_PROP_FRAME_WIDTH, 1280);
-    videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, 720);
+    videoStream->set(CV_CAP_PROP_FPS, videoProp.fps);
+    videoStream->set(CV_CAP_PROP_FRAME_WIDTH, videoProp.width);
+    videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, videoProp.height);
 
 }
 void CameraThread::run()
@@ -24,10 +24,19 @@ void CameraThread::run()
     while(true)
     {
         if (videoStream->isOpened()) {
+            int msec = movieFps.elapsed();
+            if(msec < 1000 / videoProp.fps) {
+                msleep(1000/videoProp.fps - msec);
+            }
+            movieFps.restart();
             auto captTs = std::chrono::system_clock::now();
             usFrameTs = (captTs - startTs);
-            if(videoStream->grab())
+            if(videoStream->grab()) {
                 videoStream->read(singleFrame);
+                resize(singleFrame, singleFrame,
+                       cv::Size(videoProp.width, videoProp.height)
+                       , 0, 0, cv::INTER_CUBIC);
+            }
             if (singleFrame.empty()) break;
         } else if(cameraStream->grab()) {
             auto captTs = std::chrono::system_clock::now();
@@ -59,6 +68,7 @@ void CameraThread::run()
 void CameraThread::readFromFile(QString fn)
 {
     videoStream->open(fn.toStdString());
+    movieFps.start();
     qDebug() << "File name" << fn;
 }
 
