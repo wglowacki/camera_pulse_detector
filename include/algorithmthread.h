@@ -38,7 +38,7 @@ private:
     bool saveFlag = false;
     std::ofstream saveFile;
     const int BPM_FILTER_LOW   = 55;
-    const int BPM_FILTER_HIGH = 150;
+    const int BPM_FILTER_HIGH = 170;
     int minSize = 50;
     QMutex threadMutex;
     QVector<std::shared_ptr<FrameBuffer>> foreheadBuff;
@@ -47,14 +47,15 @@ private:
     std::ofstream bpmFile;
     std::vector<double> vectBPM;
 
-    QVector<double> calcRoiMeans();
+    void detrendSignal(std::vector<double>& means, int size);
+    std::vector<double> calcRoiMeans();
     QVector<double> calcLinspaceTimes (
             int vectSize, double startT, double endT
     );
 
     std::vector<double> calcInterpMeans (
             const std::vector<double> & evenTimes,
-            QVector<double>& means
+            std::vector<double>& means
     );
 
     std::vector<gsl_complex>

@@ -70,7 +70,12 @@ void MainWindow::defineSignals()
         &cameraThread, &CameraThread::lockForehead, Qt::QueuedConnection);
     connect(this, &MainWindow::disconnnectCamera,
         &cameraThread, &CameraThread::end, Qt::QueuedConnection);
-
+    connect(ui->spinFaceInertia, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            &cameraThread, &CameraThread::changeInertia);
+    connect(ui->spinBufMax, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            [=]( const int &newValue ) { this->bufferSize = newValue; });
+    connect(ui->spinBufMin, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            &cameraThread, &CameraThread::changeMinBuffer);
 
     connect(&algorithmThread, &AlgorithmThread::bpsUpdate,
             [this](double value) {

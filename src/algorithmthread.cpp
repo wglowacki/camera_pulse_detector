@@ -30,8 +30,9 @@ void AlgorithmThread::run()
         }
         flagReceivedNewImage = false;
         currentFHBuff = foreheadBuff;
-        auto meansVect = calcRoiMeans(); //MOVE TO GPU
+        auto meansVect = calcRoiMeans();
         int sampLen = meansVect.size();
+        detrendSignal(meansVect, sampLen);
 
         if(sampLen < minSize) {
             msleep(100);
@@ -46,7 +47,6 @@ void AlgorithmThread::run()
             continue;
         }
         double freq = sampLen / timeDif;
-//        qDebug() << freq << ", freq. TimeDif: " << timeDif;
 
         auto vectEvenTimes =
                 matrix_operations::calcLinspaceTimes(
@@ -122,6 +122,36 @@ AlgorithmThread::trimVector ( const std::vector<double>& data,
     return trimmed;
 }
 
+void AlgorithmThread::detrendSignal(std::vector<double>& means, int size)
+{
+    std::vector<double> detrendedMeans;
+    int kernel = 15;
+    for (int i=0; i< size; ++i)
+    {
+        if(i<5) {
+            detrendedMeans.push_back(
+                means.at(i) - 1/(2*kernel+1) *
+                        std::accumulate( means.begin()+i,
+                                         means.begin()+(i+2*kernel), 0.0)
+            );
+        } else if (i < size-5) {
+            detrendedMeans.push_back(
+                means.at(i) - 1/(2*kernel+1) *
+                        std::accumulate( means.begin()+(i-kernel),
+                                         means.begin()+(i+kernel), 0.0)
+            );
+        } else {
+            detrendedMeans.push_back(
+                means.at(i) - 1/(2*kernel+1) *
+                    std::accumulate( means.end()-(i+2*kernel),
+                                     means.end()-i, 0.0)
+            );
+        }
+
+    }
+    means = detrendedMeans;
+}
+
 void AlgorithmThread::setForeheadBuffer(
         QVector<std::shared_ptr<FrameBuffer>> &frameBuffer)
 {
@@ -133,29 +163,23 @@ void AlgorithmThread::setImageReceivedFlag(bool& sharedFlag)
     flagReceivedNewImage = sharedFlag;
 }
 
-QVector<double> AlgorithmThread::calcRoiMeans()
+std::vector<double> AlgorithmThread::calcRoiMeans()
 {
     threadMutex.lock();
-    QVector<QVector<double>> meansVect;
-    QVector<double> singleVect;
+    std::vector<double> meansVect;
     int i = 0;
-    std::for_each(currentFHBuff.begin(), currentFHBuff.end(),
-              [&](std::shared_ptr<FrameBuffer> fh)
+    std::for_each(
+        currentFHBuff.front()->buffer.begin(),
+        currentFHBuff.front()->buffer.end(),
+        [&](std::pair<cv::Mat, int> frame)
     {
-        std::for_each(fh->buffer.begin(), fh->buffer.end(),
-            [&](std::pair<cv::Mat, int> frame)
-        {
-            cv::Mat cvMat = frame.first;
-            auto scalarMeans = cv::mean(cvMat);
-            singleVect.push_back(scalarMeans.val[i]);
-        }
-        );
-        meansVect.push_back(singleVect);
-        ++i;
-        singleVect.clear();
-    });
+        cv::Mat cvMat = frame.first;
+        auto scalarMeans = cv::mean(cvMat);
+        meansVect.push_back(scalarMeans.val[i]);
+    }
+    );
     threadMutex.unlock();
-    return meansVect.first();
+    return meansVect;
 }
 
 QVector<double>
@@ -218,7 +242,7 @@ std::vector<double>
 AlgorithmThread::getDesiredFreqs(int size, double freq)
 {
     // Frequencies using spaced values within interval - L/2+1
-//    int newSize = (size / 2) + 1;
+    int newSize = (size / 2) + 1;
     std::vector<double> genFreqs(size);
     double freqGen = freq/size;
     int cnt=0;
@@ -246,7 +270,7 @@ AlgorithmThread::trimFreqs(const std::vector<double>& genFreqs)
 
 std::vector<double>
 AlgorithmThread::calcInterpMeans(const std::vector<double>& evenTimes,
-                                 QVector<double>& means )
+                                 std::vector<double>& means )
 {
     //https://www.gnu.org/software/gsl/doc/html/interp.html
     assert (evenTimes.size() == means.size());
@@ -304,8 +328,8 @@ void AlgorithmThread::startSaveStatus(bool sf, std::string fn)
 void AlgorithmThread::updateBpm(const std::vector<double>& v)
 {
     double ret = 0;
-    if(v.size() > 10) {
-        ret = std::accumulate( v.end()-10, v.end(), 0.0) / 10;
+    if(v.size() > 20) {
+        ret = std::accumulate( v.end()-20, v.end(), 0.0) / 20;
     }
     bpsUpdate(ret);
 }

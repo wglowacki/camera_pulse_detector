@@ -31,11 +31,19 @@ void CameraThread::run()
     while(true)
     {
         if (videoStream->isOpened()) {
-
+            int msec = movieFps.elapsed();
+            if(msec < 1000 / videoProp.fps) {
+                msleep(1000/videoProp.fps - msec);
+            }
+            movieFps.restart();
             auto captTs = std::chrono::system_clock::now();
             usFrameTs = (captTs - startTs);
-            if(videoStream->grab())
+            if(videoStream->grab()) {
                 videoStream->read(singleFrame);
+                resize(singleFrame, singleFrame,
+                       cv::Size(videoProp.width, videoProp.height)
+                       , 0, 0, cv::INTER_CUBIC);
+            }
             if (singleFrame.empty()) break;
         }
 #ifndef READ_PYLON
@@ -84,6 +92,7 @@ void CameraThread::run()
 void CameraThread::readFromFile(QString fn)
 {
     videoStream->open(fn.toStdString());
+    movieFps.start();
     qDebug() << "File name" << fn;
 }
 
@@ -157,15 +166,26 @@ void CameraThread::detectFacesOnFrame()
 {
     cv::Mat gray;
     cv::cvtColor(singleFrame, gray, cv::COLOR_RGB2GRAY);
-    if(!lockForeheadState) {
+    static int faceCnt = 0;
+    if(!lockForeheadState && faceCnt==0) {
         cv::cuda::GpuMat imageGpu(gray);
         cv::cuda::GpuMat objBuf;
         cascadeGpu->detectMultiScale(imageGpu, objBuf);
         cascadeGpu->convert(objBuf, detectedFaces);
     }
+    ++faceCnt;
+    if (faceCnt > 3) {
+        faceCnt = 0;
+    }
+
     uint8_t i = 0;
-    for (auto const& face: detectedFaces)
+    for (auto& face: detectedFaces)
     {
+        if(checkIfShouldBeUpdated(face)) {
+            prevFace = face;
+        } else {
+            face = prevFace;
+        }
         auto faceGray = gray(face);
         if(face.height > 0 && face.width > 0) {
             auto fh = extractForehead(face);
@@ -199,6 +219,19 @@ void CameraThread::detectFacesOnFrame()
     }
 }
 
+
+bool CameraThread::checkIfShouldBeUpdated(const cv::Rect& face)
+{
+    int current = std::abs(face.x + face.y);
+    int previous = std::abs(prevFace.x + prevFace.y);
+    return std::abs(current-previous) > inertia;
+}
+
+void CameraThread::changeInertia(int newValue)
+{
+    inertia = newValue;
+}
+
 cv::Rect CameraThread::extractForehead(const cv::Rect& face)
 {
     cv::Rect fh;
@@ -210,6 +243,12 @@ cv::Rect CameraThread::extractForehead(const cv::Rect& face)
     fh.height = static_cast<int>(face.height * foreheadPos.h);
 
     return fh;
+}
+
+void CameraThread::changeMinBuffer(int newValue)
+{
+    this->bufferSize = newValue;
+    qDebug() << this->bufferSize;
 }
 
 void CameraThread::lockForehead(bool state)
