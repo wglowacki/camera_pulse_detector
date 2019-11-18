@@ -62,6 +62,8 @@ void MainWindow::defineSignals()
         this, &MainWindow::newSensorRead, Qt::QueuedConnection);
     connect(ui->referenceSensorEnableCheckbox, &QCheckBox::stateChanged,
         this, &MainWindow::changeReferenceSensStatus, Qt::QueuedConnection);
+    connect(ui->saveVideoCheckbox, &QCheckBox::stateChanged,
+        this, &MainWindow::startSaveStatus, Qt::QueuedConnection);
 
     connect(this, &MainWindow::lockForehead,
         &cameraThread, &CameraThread::lockForehead, Qt::QueuedConnection);
@@ -92,6 +94,23 @@ void MainWindow::startCameraThread()
             "Camera already capturing frames.");
     }
     //implement camera selection;
+}
+
+void MainWindow::startSaveStatus(int newStatus)
+{
+    std::string fileName = " ";
+    bool saveStatus = newStatus>0 ? true : false;
+    if(saveStatus) {
+        auto t = std::time(nullptr);
+        auto tm = *std::localtime(&t);
+        std::ostringstream oss;
+        oss << std::put_time(&tm, "%d-%m-%Y_%H-%M-%S");
+        fileName = oss.str();
+    }
+    cameraThread.startSaveStatus(saveStatus, fileName);
+    refSensorThread.startSaveStatus(saveStatus, fileName);
+    algorithmThread.startSaveStatus(saveStatus, fileName);
+
 }
 
 void MainWindow::changeReferenceSensStatus(int newState)
@@ -146,9 +165,9 @@ void MainWindow::openMovie() {
     cameraThread.start();
 }
 
-void MainWindow::newSensorRead(int data)
+void MainWindow::newSensorRead(QString data)
 {
-    ui->labelSensor->setText(QString::number(data));
+    ui->labelSensor->setText(data);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* key)

@@ -17,6 +17,7 @@ AlgorithmThread::AlgorithmThread(QObject * parent)
 
 void AlgorithmThread::run()
 {
+    QMutex mtx;
     while(true)
     {
 
@@ -70,7 +71,6 @@ void AlgorithmThread::run()
 //            std::cout << "error catched";
             continue;
         }
-//        std::cout << "here";
         // Get indices of frequences that are less than 50 and greater than 150
         auto filteredFreqs = getDesiredFreqs(sampLen, freq);
         auto filteredIndexes = trimFreqs(filteredFreqs);
@@ -86,8 +86,19 @@ void AlgorithmThread::run()
         */
         //GPU
         unsigned maxFftAbsIndex = matrix_operations::maxIndex(fftabs);
-
         vectBPM.push_back(freqs.at(maxFftAbsIndex));
+
+        if(saveFlag) {
+            mtx.lock();
+            auto t = std::time(nullptr);
+            auto tm = *std::localtime(&t);
+            std::ostringstream oss;
+            oss << std::put_time(&tm, "%M-%S");
+            std::string timeStamp = oss.str();
+            saveFile << timeStamp << " " << vectBPM.back() << "\n";
+            mtx.unlock();
+        }
+
         static int cnt = 0;
         if(cnt > 5) {
             updateBpm(vectBPM);
@@ -98,7 +109,6 @@ void AlgorithmThread::run()
 //      debugLog();
     }
 }
-
 
 std::vector<double>
 AlgorithmThread::trimVector ( const std::vector<double>& data,
@@ -195,7 +205,6 @@ AlgorithmThread::calcFFT(std::vector<double>& vectMeans)
     double data[size];
     std::copy(vectMeans.begin(), vectMeans.end(), data);
 
-//    gsl_complex_packed_array gslData = data;
     gsl_fft_real_wavetable* real = gsl_fft_real_wavetable_alloc(size);
     gsl_fft_real_workspace* work = gsl_fft_real_workspace_alloc(size);
     gsl_fft_real_transform(data, 1, size, real, work);
@@ -296,6 +305,26 @@ AlgorithmThread::calcInterpMeans(const std::vector<double>& evenTimes,
     return interpRes;
 }
 
+void AlgorithmThread::startSaveStatus(bool sf, std::string fn)
+{
+    QMutex mtx;
+    mtx.lock();
+    saveFlag = sf;
+    if(saveFlag) {
+        if(saveFile.is_open()) {
+            saveFile.close();
+        }
+        std::string name = "algorithm_" + fn + ".txt";
+        saveFile.open(name);
+        saveFlag = true;
+    }
+    else {
+        saveFlag = false;
+        saveFile.close();
+    }
+    mtx.unlock();
+}
+
 void AlgorithmThread::updateBpm(const std::vector<double>& v)
 {
     double ret = 0;
@@ -317,5 +346,8 @@ void AlgorithmThread::debugLog()
 
 void AlgorithmThread::end()
 {
+    saveFlag = false;
+    saveFile.close();
+    bpmFile.close();
 
 }

@@ -30,8 +30,9 @@ public:
     void startPPMAlg();
     void currFpsVal(double value);
     void cameraDisconnected();
+    void startSaveStatus(int newStatus);
     void drawPixmap(QPixmap image);
-    void newSensorRead(int data);
+    void newSensorRead(QString data);
     void setWindowStylesheet();
     void defineSignals();
     void openMovie();
@@ -53,7 +54,7 @@ private:
     QVector<std::shared_ptr<FrameBuffer>>
         foreheadDetectedImageBuffer;
     bool flagReceivedNewImage = false;
-    uint8_t bufferSize = 240;
+    uint8_t bufferSize = 250;
 };
 
 #endif // MAINWINDOW_H

@@ -4,6 +4,7 @@
 
 CameraThread::CameraThread()
 {
+#ifndef READ_PYLON
     cameraStream->set(CV_CAP_PROP_FPS, cameraProp.fps);
     cameraStream->set(CV_CAP_PROP_FRAME_WIDTH, cameraProp.width);
     cameraStream->set(CV_CAP_PROP_FRAME_HEIGHT, cameraProp.height);
@@ -12,14 +13,22 @@ CameraThread::CameraThread()
     videoStream->set(CV_CAP_PROP_FRAME_WIDTH, videoProp.width);
     videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, videoProp.height);
 
+#else
+    cascadeGpu->setScaleFactor(1.4);
+#endif
 }
 void CameraThread::run()
 {
+    QMutex mtx;
+#ifndef READ_PYLON
     if(!cameraStream->isOpened()) {
         tools::dispQMsg("Camera error",
             "Cannot connect to camera. Camera thread ends");
         emit cameraDisconnected();
     }
+#else
+    pylonCamera.openCam();
+#endif
     endRequest = false;
     while(true)
     {
@@ -33,18 +42,32 @@ void CameraThread::run()
             usFrameTs = (captTs - startTs);
             if(videoStream->grab()) {
                 videoStream->read(singleFrame);
-                resize(singleFrame, singleFrame,
-                       cv::Size(videoProp.width, videoProp.height)
-                       , 0, 0, cv::INTER_CUBIC);
             }
             if (singleFrame.empty()) break;
-        } else if(cameraStream->grab()) {
+        }
+#ifndef READ_PYLON
+        else if(cameraStream->grab()) {
             auto captTs = std::chrono::system_clock::now();
             usFrameTs = (captTs - startTs);
             cameraStream->retrieve(singleFrame);
-        } else {
+        }
+#else
+        else if( pylonCamera.isOpened() ) {
+            pylonCamera.getCvFrame(singleFrame, pylonTs);
+            if(singleFrame.empty()) {
+                msleep(200);
+                continue;
+            }
+        }
+#endif
+        else {
             continue;
         }
+            if(saveStatus) {
+                mtx.lock();
+                savedVideo.write(singleFrame);
+                mtx.unlock();
+            }
             detectFacesOnFrame();
             sendFrameToDisplay(singleFrame);
 
@@ -88,6 +111,37 @@ void CameraThread::setForeheadBuffer(
 void CameraThread::setImageReceivedFlag(bool& sharedFlag)
 {
     flagReceivedNewImage = sharedFlag;
+}
+
+void CameraThread::startSaveStatus(bool saveFlag, std::string fn)
+{
+    QMutex mtx;
+    mtx.lock();
+    if(saveFlag) {
+        if(savedVideo.isOpened()) {
+            savedVideo.release();
+        }
+        while(savedVideo.isOpened())
+        {
+            msleep(50);
+        }
+        saveStatus = true;
+        std::string vname = "video_" + fn + ".avi";
+
+        int width = 640, height = 480;
+#ifdef READ_PYLON
+        width =  1020;
+        height = 1023;
+
+#endif
+        savedVideo.open(vname, CV_FOURCC('H','2','6','4'),
+                        videoProp.fps, cv::Size(width, height));
+    }
+    else {
+        saveStatus = false;
+        savedVideo.release();
+    }
+    mtx.unlock();
 }
 
 void CameraThread::sendFrameToDisplay(cv::Mat& frame)
@@ -145,10 +199,16 @@ void CameraThread::detectFacesOnFrame()
                         matFh.rows, matFh.cols, CV_8UC1);
             cv::merge(channels,3,matFh);
 
+#ifndef READ_PYLON
             faceBuff.at(i)->buffWrite(
                         matFace, usFrameTs.count());
             foreheadBuff.at(i)->buffWrite(
                         channels[1], usFrameTs.count());
+#else
+            double castedTime = static_cast<double>(pylonTs/1000)/10000000;
+            faceBuff.at(i)->buffWrite(  matFace, castedTime);
+            foreheadBuff.at(i)->buffWrite( channels[1], castedTime);
+#endif
             flagReceivedNewImage = true;
 
             cv::rectangle(singleFrame, fh, cv::Scalar(255));
@@ -197,4 +257,6 @@ void CameraThread::lockForehead(bool state)
 
 void CameraThread::end() {
     endRequest = true;
+    saveStatus = false;
+    savedVideo.release();
 }

@@ -10,6 +10,11 @@
 #include "functionsandtools.h"
 #include "framebuffer.h"
 
+//#define READ_PYLON
+#ifdef READ_PYLON
+#include "camerapylon.h"
+#endif
+
 class CameraThread : public QThread
 {
     Q_OBJECT
@@ -29,6 +34,7 @@ public:
                         <FrameBuffer> >& frameBuffer);
     void setImageReceivedFlag(bool& flagReceivedNewImage);
     void sendFrameToDisplay(cv::Mat& frame);
+    void startSaveStatus(bool newState, std::string fn);
     void detectFacesOnFrame();
     bool isCameraAvailable();
     void changeInertia(int newValue);
@@ -44,7 +50,7 @@ private:
     struct CaptureProperties {
         int width  = 640;
         int height = 480;
-        int fps    =  15;
+        int fps    =  30;
     };
     bool endRequest = false;
     bool lockForeheadState = false;
@@ -61,8 +67,16 @@ private:
     QTime movieFps;
     double elapsedTime = 0.0;
     std::chrono::duration<double> usFrameTs;
+    double grabTs = 0.0;
+    uint64_t pylonTs = 0.0;
+    bool saveStatus = false;
+    cv::VideoWriter savedVideo;
+#ifndef READ_PYLON
     std::unique_ptr<cv::VideoCapture> cameraStream
         = std::make_unique<cv::VideoCapture>(0);
+#else
+    CameraPylon pylonCamera;
+#endif
     std::unique_ptr<cv::VideoCapture> videoStream
         = std::make_unique<cv::VideoCapture>();
 
@@ -87,14 +101,14 @@ private:
         double h = 0.20;
     } foreheadPos;
 
-    CaptureProperties cameraProp{640, 480, 15}, videoProp{640, 480, 15};
+    CaptureProperties cameraProp{640, 480, 20}, videoProp{640, 480, 20};
     cv::Mat singleFrame;
     uint8_t frameCnt = 0;
     uint8_t bufferSize = 60;
     int droppedFramesCounter = 0;
     QMutex lockMutex, readMutex;
     std::string pathToHaarDetector
-        = "/home/wojtas/magisterka/camera_pulse_detector/classifiers/haarcascade_frontalface_alt.xml";
+        = "../classifiers/haarcascade_frontalface_alt.xml";
     cv::Ptr<cv::cuda::CascadeClassifier> cascadeGpu
         = cv::cuda::CascadeClassifier::create(pathToHaarDetector);
 
