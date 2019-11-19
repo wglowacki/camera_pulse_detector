@@ -48,13 +48,14 @@ void AlgorithmThread::run()
         }
         double freq = sampLen / timeDif;
 
-        auto vectEvenTimes =
-                matrix_operations::calcLinspaceTimes(
-                    sampLen, startT, endT
-                );
-        auto vectInterpMeans = calcInterpMeans(
-                    vectEvenTimes, meansVect
-        );
+//        auto vectEvenTimes =
+//                matrix_operations::calcLinspaceTimes(
+//                    sampLen, startT, endT
+//                );
+//        auto vectInterpMeans = calcInterpMeans(
+//                    vectEvenTimes, meansVect
+//        );
+        auto vectInterpMeans = meansVect;
         auto hw = tools::createHammingWindow(sampLen);
         auto vectHamMeans =
                 matrix_operations::multiplyVecKernel (

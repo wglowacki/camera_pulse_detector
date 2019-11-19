@@ -17,7 +17,7 @@ void CameraPylon::setConfigData()
     //here camera config is initialized
     std::cout << "\nSet camera configuration data\n";
 
-    const Pylon::String_t& fn = "../acA2040-90uc_22924816.pfs";
+    const Pylon::String_t& fn = "../acA2040-1024.pfs";
     try {
         Pylon::CFeaturePersistence::Load(fn, &camera->GetNodeMap(), true);
     } catch (const Pylon::GenericException& exception) {
@@ -50,9 +50,13 @@ void CameraPylon::getCvFrame(cv::Mat& singleFrame, uint64_t& exposureTime)
     camera->RetrieveResult( 5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
     // Access the image data.
     const uint8_t *pImageBuffer = (uint8_t *) ptrGrabResult->GetBuffer();
-    static const int cameraTic = 1; //duration of one camera tick in ns.
+    static const int cameraTic = 4; //duration of one camera tick in ns.
     exposureTime = ptrGrabResult->GetTimeStamp() * cameraTic;
+
     //CV
+    if(!ptrGrabResult.IsValid()) {
+        return;
+    }
     opencvConverter.Convert(cvImgHandler, ptrGrabResult);
     singleFrame = cv::Mat( ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(),
                           CV_8UC3, (uint8_t*)cvImgHandler.GetBuffer() );

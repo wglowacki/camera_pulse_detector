@@ -1,18 +1,21 @@
 #include "camerathread.h"
 #include <QPixmap>
+#include <QDir>
 #include <limits>
 
 CameraThread::CameraThread()
 {
 #ifndef READ_PYLON
-    cameraStream->set(CV_CAP_PROP_FPS, 20);
-//    videoStream->set(CV_CAP_PROP_FRAME_WIDTH, 1280);
-//    videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, 720);
-
-    videoStream->set(CV_CAP_PROP_FPS, 20);
+    cameraStream->set(CV_CAP_PROP_FPS, cameraProp.fps);
+    cameraStream->set(CV_CAP_PROP_FRAME_WIDTH, cameraProp.width);
+    cameraStream->set(CV_CAP_PROP_FRAME_HEIGHT, cameraProp.height);
+//    std::cout << cameraStream.get(CV_CAP_PROP_FRAME_WIDTH);
+    videoStream->set(CV_CAP_PROP_FPS, videoProp.fps);
+    videoStream->set(CV_CAP_PROP_FRAME_WIDTH, videoProp.width);
+    videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, videoProp.height);
 
 #else
-    cascadeGpu->setScaleFactor(1.4);
+    cascadeGpu->setScaleFactor(1.3);
 #endif
 }
 void CameraThread::run()
@@ -40,9 +43,6 @@ void CameraThread::run()
             usFrameTs = (captTs - startTs);
             if(videoStream->grab()) {
                 videoStream->read(singleFrame);
-                resize(singleFrame, singleFrame,
-                       cv::Size(videoProp.width, videoProp.height)
-                       , 0, 0, cv::INTER_CUBIC);
             }
             if (singleFrame.empty()) break;
         }
@@ -54,8 +54,11 @@ void CameraThread::run()
         }
 #else
         else if( pylonCamera.isOpened() ) {
+            mtx.lock();
             pylonCamera.getCvFrame(singleFrame, pylonTs);
+            mtx.unlock();
             if(singleFrame.empty()) {
+                printf("Frame empty");
                 msleep(200);
                 continue;
             }
@@ -66,10 +69,24 @@ void CameraThread::run()
         }
             if(saveStatus) {
                 mtx.lock();
-                savedVideo.write(singleFrame);
+                std::string a =  saveImageDir +
+                               cv::format("img_%04d.png",saveImageCounter);
+                static cv::Mat saveFrame;
+                cv::resize(singleFrame, saveFrame, cv::Size(640, 480), 0, 0, cv::INTER_AREA);
+
+                if(!cv::imwrite(a, saveFrame )) {
+                    qDebug() << "error" << QString::fromStdString(a);
+                }
+                ++saveImageCounter;
+                if(saveImageCounter == 1600) {
+                    saveStatus = false;
+
+                }
                 mtx.unlock();
             }
+            mtx.lock();
             detectFacesOnFrame();
+            mtx.unlock();
             sendFrameToDisplay(singleFrame);
 
             ++frameCnt;
@@ -119,28 +136,17 @@ void CameraThread::startSaveStatus(bool saveFlag, std::string fn)
     QMutex mtx;
     mtx.lock();
     if(saveFlag) {
-        if(savedVideo.isOpened()) {
-            savedVideo.release();
-        }
-        while(savedVideo.isOpened())
-        {
-            msleep(50);
-        }
         saveStatus = true;
-        std::string vname = "video_" + fn + ".avi";
-
-        int width = 640, height = 480;
-#ifdef READ_PYLON
-        width =  1020;
-        height = 1023;
-
-#endif
-        savedVideo.open(vname, CV_FOURCC('H','2','6','4'),
-                        20, cv::Size(width, height));
+        saveImageDir = "video/img_" + fn + "/";
+        auto qStr = QString::fromStdString(saveImageDir);
+        QDir dir(qStr);
+        if(!dir.exists())
+        {
+            dir.mkpath(".");
+        }
     }
     else {
         saveStatus = false;
-        savedVideo.release();
     }
     mtx.unlock();
 }
@@ -199,6 +205,7 @@ void CameraThread::detectFacesOnFrame()
             channels[2] = cv::Mat::zeros(
                         matFh.rows, matFh.cols, CV_8UC1);
             cv::merge(channels,3,matFh);
+            cv::imshow("a",matFh);
 
 #ifndef READ_PYLON
             faceBuff.at(i)->buffWrite(
@@ -207,6 +214,9 @@ void CameraThread::detectFacesOnFrame()
                         channels[1], usFrameTs.count());
 #else
             double castedTime = static_cast<double>(pylonTs/1000)/10000000;
+            if(matFace.empty()) {
+                return;
+            }
             faceBuff.at(i)->buffWrite(  matFace, castedTime);
             foreheadBuff.at(i)->buffWrite( channels[1], castedTime);
 #endif
@@ -259,5 +269,4 @@ void CameraThread::lockForehead(bool state)
 void CameraThread::end() {
     endRequest = true;
     saveStatus = false;
-    savedVideo.release();
 }

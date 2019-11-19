@@ -369,7 +369,7 @@
      <rect>
       <x>0</x>
       <y>440</y>
-      <width>301</width>
+      <width>304</width>
       <height>251</height>
      </rect>
     </property>
@@ -420,11 +420,17 @@
      </item>
      <item row="0" column="0" colspan="2">
       <widget class="QCheckBox" name="saveVideoCheckbox">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>40</height>
+        </size>
+       </property>
        <property name="layoutDirection">
         <enum>Qt::RightToLeft</enum>
        </property>
        <property name="text">
-        <string>Zapisz dane  </string>
+        <string>Save data:                                                            </string>
        </property>
       </widget>
      </item>

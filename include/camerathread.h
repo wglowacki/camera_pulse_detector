@@ -10,7 +10,7 @@
 #include "functionsandtools.h"
 #include "framebuffer.h"
 
-//#define READ_PYLON
+#define READ_PYLON
 #ifdef READ_PYLON
 #include "camerapylon.h"
 #endif
@@ -50,7 +50,7 @@ private:
     struct CaptureProperties {
         int width  = 640;
         int height = 480;
-        int fps    =  15;
+        int fps    =  20;
     };
     bool endRequest = false;
     bool lockForeheadState = false;
@@ -71,6 +71,8 @@ private:
     uint64_t pylonTs = 0.0;
     bool saveStatus = false;
     cv::VideoWriter savedVideo;
+    int saveImageCounter = 0;
+    std::string saveImageDir = "";
 #ifndef READ_PYLON
     std::unique_ptr<cv::VideoCapture> cameraStream
         = std::make_unique<cv::VideoCapture>(0);
@@ -101,7 +103,7 @@ private:
         double h = 0.20;
     } foreheadPos;
 
-    CaptureProperties cameraProp{640, 480, 15}, videoProp{640, 480, 15};
+    CaptureProperties cameraProp{640, 480, 20}, videoProp{640, 480, 20};
     cv::Mat singleFrame;
     uint8_t frameCnt = 0;
     uint8_t bufferSize = 60;
