@@ -1,5 +1,6 @@
 #include "camerathread.h"
 #include <QPixmap>
+#include <QDir>
 #include <limits>
 
 CameraThread::CameraThread()
@@ -8,7 +9,7 @@ CameraThread::CameraThread()
     cameraStream->set(CV_CAP_PROP_FPS, cameraProp.fps);
     cameraStream->set(CV_CAP_PROP_FRAME_WIDTH, cameraProp.width);
     cameraStream->set(CV_CAP_PROP_FRAME_HEIGHT, cameraProp.height);
-
+//    std::cout << cameraStream.get(CV_CAP_PROP_FRAME_WIDTH);
     videoStream->set(CV_CAP_PROP_FPS, videoProp.fps);
     videoStream->set(CV_CAP_PROP_FRAME_WIDTH, videoProp.width);
     videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, videoProp.height);
@@ -65,7 +66,16 @@ void CameraThread::run()
         }
             if(saveStatus) {
                 mtx.lock();
-                savedVideo.write(singleFrame);
+                std::string a =  saveImageDir +
+                               cv::format("img_%4d.png",saveImageCounter);
+                if(!cv::imwrite(a, singleFrame )) {
+                    qDebug() << "error" << QString::fromStdString(a);
+                }
+                ++saveImageCounter;
+                if(saveImageCounter == 1600) {
+                    saveStatus = false;
+
+                }
                 mtx.unlock();
             }
             detectFacesOnFrame();
@@ -118,28 +128,17 @@ void CameraThread::startSaveStatus(bool saveFlag, std::string fn)
     QMutex mtx;
     mtx.lock();
     if(saveFlag) {
-        if(savedVideo.isOpened()) {
-            savedVideo.release();
-        }
-        while(savedVideo.isOpened())
-        {
-            msleep(50);
-        }
         saveStatus = true;
-        std::string vname = "video_" + fn + ".avi";
-
-        int width = 640, height = 480;
-#ifdef READ_PYLON
-        width =  1020;
-        height = 1023;
-
-#endif
-        savedVideo.open(vname, CV_FOURCC('H','2','6','4'),
-                        videoProp.fps, cv::Size(width, height));
+        saveImageDir = "video/img_" + fn + "/";
+        auto qStr = QString::fromStdString(saveImageDir);
+        QDir dir(qStr);
+        if(!dir.exists())
+        {
+            dir.mkpath(".");
+        }
     }
     else {
         saveStatus = false;
-        savedVideo.release();
     }
     mtx.unlock();
 }
@@ -258,5 +257,4 @@ void CameraThread::lockForehead(bool state)
 void CameraThread::end() {
     endRequest = true;
     saveStatus = false;
-    savedVideo.release();
 }
