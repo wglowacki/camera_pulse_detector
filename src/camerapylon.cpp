@@ -17,7 +17,7 @@ void CameraPylon::setConfigData()
     //here camera config is initialized
     std::cout << "\nSet camera configuration data\n";
 
-    const Pylon::String_t& fn = "../acA2040-90uc_current.pfs";
+    const Pylon::String_t& fn = "../acA2040-90uc_22924816.pfs";
     try {
         Pylon::CFeaturePersistence::Load(fn, &camera->GetNodeMap(), true);
     } catch (const Pylon::GenericException& exception) {

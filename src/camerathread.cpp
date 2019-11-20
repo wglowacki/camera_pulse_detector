@@ -3,27 +3,35 @@
 #include <QDir>
 #include <limits>
 
-CameraThread::CameraThread()
+void CameraThread::init()
 {
-    cameraStream->set(CV_CAP_PROP_FPS, cameraProp.fps);
-    cameraStream->set(CV_CAP_PROP_FRAME_WIDTH, cameraProp.width);
-    cameraStream->set(CV_CAP_PROP_FRAME_HEIGHT, cameraProp.height);
-    videoStream->set(CV_CAP_PROP_FPS, videoProp.fps);
-    videoStream->set(CV_CAP_PROP_FRAME_WIDTH, videoProp.width);
-    videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, videoProp.height);
+    startTime = Time::now();
+    endTime  = Time::now();
+    startTs = std::chrono::system_clock::now();
+    cascadeGpu = cv::cuda::CascadeClassifier::create(pathToHaarDetector);
 
     if(readBaslerCamera) {
+        pylonCamera = std::make_shared<CameraPylon>();
         cascadeGpu->setScaleFactor(1.3);
+    } else {
+        cameraStream = std::make_shared<cv::VideoCapture>(0);
+        cameraStream->set(CV_CAP_PROP_FPS, cameraProp.fps);
+        cameraStream->set(CV_CAP_PROP_FRAME_WIDTH, cameraProp.width);
+        cameraStream->set(CV_CAP_PROP_FRAME_HEIGHT, cameraProp.height);
+
+        videoStream = std::make_shared<cv::VideoCapture>();
+        videoStream->set(CV_CAP_PROP_FPS, videoProp.fps);
+        videoStream->set(CV_CAP_PROP_FRAME_WIDTH, videoProp.width);
+        videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, videoProp.height);
     }
+
 }
 void CameraThread::run()
 {
     QMutex mtx;
     if(!readBaslerCamera) {
         if(!cameraStream->isOpened()) {
-            tools::dispQMsg("Camera error",
-                "Cannot connect to camera. Camera thread ends");
-            emit cameraDisconnected();
+            cameraStream->open(0);
         }
     } else {
         pylonCamera->openCam();
@@ -31,23 +39,26 @@ void CameraThread::run()
     endRequest = false;
     while(true)
     {
-        if (videoStream->isOpened()) {
-            int msec = movieFps.elapsed();
-            if(msec < 1000 / videoProp.fps) {
-                msleep(1000/videoProp.fps - msec);
-            }
-            movieFps.restart();
-            auto captTs = std::chrono::system_clock::now();
-            usFrameTs = (captTs - startTs);
-            if(videoStream->grab()) {
-                videoStream->read(singleFrame);
-            }
-            if (singleFrame.empty()) break;
-        } else if(!readBaslerCamera) {
+        if(!readBaslerCamera) {
             if(cameraStream->grab()) {
                 auto captTs = std::chrono::system_clock::now();
                 usFrameTs = (captTs - startTs);
                 cameraStream->retrieve(singleFrame);
+                if(singleFrame.empty()) {
+                    continue;
+                }
+            } else if (videoStream->isOpened()) {
+                int msec = movieFps.elapsed();
+                if(msec < 1000 / videoProp.fps) {
+                    msleep(1000/videoProp.fps - msec);
+                }
+                movieFps.restart();
+                auto captTs = std::chrono::system_clock::now();
+                usFrameTs = (captTs - startTs);
+                if(videoStream->grab()) {
+                    videoStream->read(singleFrame);
+                }
+                if (singleFrame.empty()) break;
             }
         } else if (readBaslerCamera) {
             if( pylonCamera->isOpened() ) {
@@ -115,17 +126,8 @@ void CameraThread::pylonCameraRead(int newState)
     qDebug() << "pylonCameraNewState";
     if(newState != 0) {
         readBaslerCamera = true;
-        if(cameraStream->isOpened()) {
-            cameraStream->release();
-            while(cameraStream->isOpened()) {
-                msleep(50);
-            }
-        }
-        pylonCamera = std::make_shared<CameraPylon>();
     } else {
         readBaslerCamera = false;
-        pylonCamera->disconnectDevice();
-        pylonCamera.reset();
     }
 }
 
@@ -202,6 +204,7 @@ void CameraThread::sendFrameToDisplay(cv::Mat& frame, bool wholeFrame)
 
 void CameraThread::detectFacesOnFrame()
 {
+    QMutex mtx;
     cv::Mat gray;
     cv::cvtColor(singleFrame, gray, cv::COLOR_RGB2GRAY);
     static int faceCnt = 0;
@@ -240,10 +243,12 @@ void CameraThread::detectFacesOnFrame()
 
             sendFrameToDisplay(matFh, false);
 
+            mtx.lock();
             faceBuff.at(i)->buffWrite(
                         matFace, usFrameTs.count());
             foreheadBuff.at(i)->buffWrite(
                         channels[1], usFrameTs.count());
+            mtx.unlock();
 //#else
 //            double castedTime = static_cast<double>(pylonTs/1000)/10000000;
 //            if(matFace.empty()) {

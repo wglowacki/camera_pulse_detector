@@ -24,7 +24,8 @@ signals:
     void currentFpsValue(double value);
 
 public:
-    CameraThread();
+    CameraThread() {}
+    void init();
     void setFaceBuffer(QVector< std::shared_ptr
                         <FrameBuffer> >& frameBuffer);
     void setForeheadBuffer(QVector< std::shared_ptr
@@ -54,14 +55,9 @@ private:
     bool lockForeheadState = false;
     cv::Rect prevFace = {0,0,0,0};
     typedef std::chrono::high_resolution_clock Time;
-    std::chrono::time_point<Time>  startTime = Time::now();
-    std::chrono::time_point<Time>  endTime = Time::now();
+    std::chrono::time_point<Time>  startTime, endTime;
     std::chrono::duration<double> timeDiff;
-//    QTime startTime = QTime::currentTime();
-//    QTime endTime = QTime::currentTime();
-    std::chrono::time_point<std::chrono::system_clock>
-        startTs = std::chrono::system_clock::now();
-
+    std::chrono::time_point<std::chrono::system_clock> startTs;
     QTime movieFps;
     bool readBaslerCamera = false;
     double elapsedTime = 0.0;
@@ -72,12 +68,10 @@ private:
     cv::VideoWriter savedVideo;
     int saveImageCounter = 0;
     std::string saveImageDir = "";
-    std::shared_ptr<cv::VideoCapture> cameraStream
-        = std::make_shared<cv::VideoCapture>(0);
+    std::shared_ptr<cv::VideoCapture> cameraStream;
     std::shared_ptr<CameraPylon> pylonCamera;
 
-    std::shared_ptr<cv::VideoCapture> videoStream
-        = std::make_shared<cv::VideoCapture>();
+    std::shared_ptr<cv::VideoCapture> videoStream;
 
     QVector<std::shared_ptr<FrameBuffer>> faceBuff;
     QVector<std::shared_ptr<FrameBuffer>> foreheadBuff;
@@ -103,8 +97,7 @@ private:
     QMutex lockMutex, readMutex;
     std::string pathToHaarDetector
         = "../classifiers/haarcascade_frontalface_alt.xml";
-    cv::Ptr<cv::cuda::CascadeClassifier> cascadeGpu
-        = cv::cuda::CascadeClassifier::create(pathToHaarDetector);
+    cv::Ptr<cv::cuda::CascadeClassifier> cascadeGpu;
 
     bool checkIfShouldBeUpdated(const cv::Rect& face);
     cv::Rect extractForehead(const cv::Rect& face);

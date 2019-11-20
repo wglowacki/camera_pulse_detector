@@ -20,13 +20,7 @@ MainWindow::MainWindow(QWidget *parent) :
     foreheadDetectedImageBuffer.push_back (
         std::make_shared<FrameBuffer>(bufferSize)
     );
-    //faceDetectedImageBuffer.begin()->setActive(true);
 
-    cameraThread.setFaceBuffer(faceDetectedImageBuffer);
-    cameraThread.setForeheadBuffer(foreheadDetectedImageBuffer);
-    cameraThread.setImageReceivedFlag(flagReceivedNewImage);
-    algorithmThread.setForeheadBuffer(foreheadDetectedImageBuffer);
-    cameraThread.setImageReceivedFlag(flagReceivedNewImage);
     defineSignals();
 }
 
@@ -90,8 +84,14 @@ void MainWindow::startCameraThread()
     ui->connectCameraButton->setChecked(false);
     ui->connectCameraButton->setText("Capturing frames");
 
+    cameraThread.setFaceBuffer(faceDetectedImageBuffer);
+    cameraThread.setForeheadBuffer(foreheadDetectedImageBuffer);
+    cameraThread.setImageReceivedFlag(flagReceivedNewImage);
+    cameraThread.setImageReceivedFlag(flagReceivedNewImage);
+
     if(!cameraThread.isRunning()) {
         qDebug() << "Starting camera thread";
+        cameraThread.init();
         cameraThread.start();
     } else {
         tools::dispQMsg("Camera running",
@@ -135,6 +135,7 @@ void MainWindow::startPPMAlg()
     if(cameraThread.isRunning()) {
         ui->algorithmButton->setText("AlgorithmRunning");
         qDebug() << "Starting algorithm thread";
+        algorithmThread.setForeheadBuffer(foreheadDetectedImageBuffer);
         algorithmThread.start();
     } else {
         tools::dispQMsg("Capture not running",
