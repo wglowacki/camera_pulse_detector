@@ -5,31 +5,29 @@
 
 CameraThread::CameraThread()
 {
-#ifndef READ_PYLON
     cameraStream->set(CV_CAP_PROP_FPS, cameraProp.fps);
     cameraStream->set(CV_CAP_PROP_FRAME_WIDTH, cameraProp.width);
     cameraStream->set(CV_CAP_PROP_FRAME_HEIGHT, cameraProp.height);
-//    std::cout << cameraStream.get(CV_CAP_PROP_FRAME_WIDTH);
     videoStream->set(CV_CAP_PROP_FPS, videoProp.fps);
     videoStream->set(CV_CAP_PROP_FRAME_WIDTH, videoProp.width);
     videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, videoProp.height);
 
-#else
-    cascadeGpu->setScaleFactor(1.3);
-#endif
+    if(readBaslerCamera) {
+        cascadeGpu->setScaleFactor(1.3);
+    }
 }
 void CameraThread::run()
 {
     QMutex mtx;
-#ifndef READ_PYLON
-    if(!cameraStream->isOpened()) {
-        tools::dispQMsg("Camera error",
-            "Cannot connect to camera. Camera thread ends");
-        emit cameraDisconnected();
+    if(!readBaslerCamera) {
+        if(!cameraStream->isOpened()) {
+            tools::dispQMsg("Camera error",
+                "Cannot connect to camera. Camera thread ends");
+            emit cameraDisconnected();
+        }
+    } else {
+        pylonCamera->openCam();
     }
-#else
-    pylonCamera.openCam();
-#endif
     endRequest = false;
     while(true)
     {
@@ -45,25 +43,26 @@ void CameraThread::run()
                 videoStream->read(singleFrame);
             }
             if (singleFrame.empty()) break;
-        }
-#ifndef READ_PYLON
-        else if(cameraStream->grab()) {
+        } else if(!readBaslerCamera) {
+            if(cameraStream->grab()) {
+                auto captTs = std::chrono::system_clock::now();
+                usFrameTs = (captTs - startTs);
+                cameraStream->retrieve(singleFrame);
+            }
+        } else if (readBaslerCamera) {
+            if( pylonCamera->isOpened() ) {
+            mtx.lock();
             auto captTs = std::chrono::system_clock::now();
             usFrameTs = (captTs - startTs);
-            cameraStream->retrieve(singleFrame);
-        }
-#else
-        else if( pylonCamera.isOpened() ) {
-            mtx.lock();
-            pylonCamera.getCvFrame(singleFrame, pylonTs);
+            pylonCamera->getCvFrame(singleFrame, pylonTs);
             mtx.unlock();
             if(singleFrame.empty()) {
                 printf("Frame empty");
                 msleep(200);
                 continue;
             }
+            }
         }
-#endif
         else {
             continue;
         }
@@ -87,7 +86,7 @@ void CameraThread::run()
             mtx.lock();
             detectFacesOnFrame();
             mtx.unlock();
-            sendFrameToDisplay(singleFrame);
+            sendFrameToDisplay(singleFrame, true);
 
             ++frameCnt;
 
@@ -103,6 +102,30 @@ void CameraThread::run()
         if(endRequest) {
             break;
         }
+    }
+}
+
+void CameraThread::pylonCameraRead(int newState)
+{
+    QMutex mux;
+    mux.lock();
+    foreheadBuff.clear();
+    faceBuff.clear();
+    mux.unlock();
+    qDebug() << "pylonCameraNewState";
+    if(newState != 0) {
+        readBaslerCamera = true;
+        if(cameraStream->isOpened()) {
+            cameraStream->release();
+            while(cameraStream->isOpened()) {
+                msleep(50);
+            }
+        }
+        pylonCamera = std::make_shared<CameraPylon>();
+    } else {
+        readBaslerCamera = false;
+        pylonCamera->disconnectDevice();
+        pylonCamera.reset();
     }
 }
 
@@ -151,10 +174,13 @@ void CameraThread::startSaveStatus(bool saveFlag, std::string fn)
     mtx.unlock();
 }
 
-void CameraThread::sendFrameToDisplay(cv::Mat& frame)
+void CameraThread::sendFrameToDisplay(cv::Mat& frame, bool wholeFrame)
 {
-
-    cv::resize(frame, frame, cv::Size(640, 480), 0, 0, cv::INTER_AREA);
+    if(wholeFrame) {
+        cv::resize(frame, frame, cv::Size(640, 480), 0, 0, cv::INTER_AREA);
+    } else {
+        cv::resize(frame, frame, cv::Size(240, 80), 0, 0, cv::INTER_AREA);
+    }
     QPixmap pixmap;
     if (frame.channels()== 3) {
             cv::cvtColor(frame, frame, CV_BGR2RGB);
@@ -166,8 +192,14 @@ void CameraThread::sendFrameToDisplay(cv::Mat& frame)
                 static_cast<const unsigned char*>(frame.data),
                 frame.cols,frame.rows,QImage::Format_Indexed8));
     }
-    emit drawPixmap(pixmap);
+
+    if(wholeFrame) {
+        emit drawPixmap(pixmap);
+    } else {
+        emit drawDetection(pixmap);
+    }
 }
+
 void CameraThread::detectFacesOnFrame()
 {
     cv::Mat gray;
@@ -204,22 +236,22 @@ void CameraThread::detectFacesOnFrame()
                         matFh.rows, matFh.cols, CV_8UC1);
             channels[2] = cv::Mat::zeros(
                         matFh.rows, matFh.cols, CV_8UC1);
-            cv::merge(channels,3,matFh);
-            cv::imshow("a",matFh);
+            cv::merge(channels, 3, matFh);
 
-#ifndef READ_PYLON
+            sendFrameToDisplay(matFh, false);
+
             faceBuff.at(i)->buffWrite(
                         matFace, usFrameTs.count());
             foreheadBuff.at(i)->buffWrite(
                         channels[1], usFrameTs.count());
-#else
-            double castedTime = static_cast<double>(pylonTs/1000)/10000000;
-            if(matFace.empty()) {
-                return;
-            }
-            faceBuff.at(i)->buffWrite(  matFace, castedTime);
-            foreheadBuff.at(i)->buffWrite( channels[1], castedTime);
-#endif
+//#else
+//            double castedTime = static_cast<double>(pylonTs/1000)/10000000;
+//            if(matFace.empty()) {
+//                return;
+//            }
+//            faceBuff.at(i)->buffWrite(  matFace, castedTime);
+//            foreheadBuff.at(i)->buffWrite( channels[1], castedTime);
+//#endif
             flagReceivedNewImage = true;
 
             cv::rectangle(singleFrame, fh, cv::Scalar(255));
@@ -268,5 +300,13 @@ void CameraThread::lockForehead(bool state)
 
 void CameraThread::end() {
     endRequest = true;
+
+    if(cameraStream->isOpened()) {
+        cameraStream->release();
+    }
+    if(videoStream->isOpened()) {
+        videoStream->release();
+    }
+
     saveStatus = false;
 }

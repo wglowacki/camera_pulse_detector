@@ -32,6 +32,7 @@ public:
     void cameraDisconnected();
     void startSaveStatus(int newStatus);
     void drawPixmap(QPixmap image);
+    void drawDetection(QPixmap image);
     void newSensorRead(QString data);
     void setWindowStylesheet();
     void defineSignals();

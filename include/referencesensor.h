@@ -7,6 +7,8 @@
 class ReferenceSensorThread : public QThread
 {
 Q_OBJECT
+public slots:
+    void end();
 signals:
     void publishData(QString data);
 public:

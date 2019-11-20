@@ -16,6 +16,7 @@ public:
     void setConfigData();
     void openCam();
     bool isOpened();
+    void disconnectDevice();
     void getCvFrame(cv::Mat& singleFrame, uint64_t& exposureTime);
 
 private:
@@ -25,5 +26,4 @@ private:
 
     Pylon::CImageFormatConverter opencvConverter;
     Pylon::CPylonImage cvImgHandler;
-    void disconnectDevice();
 };

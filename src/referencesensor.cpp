@@ -79,3 +79,7 @@ void ReferenceSensorThread::closeSerialPort()
     saveFlag = false;
     saveFile.close();
 }
+void ReferenceSensorThread::end()
+{
+    closeSerialPort();
+}

@@ -58,12 +58,16 @@ void MainWindow::defineSignals()
         this, &MainWindow::currFpsVal, Qt::QueuedConnection);
     connect(&cameraThread, &CameraThread::drawPixmap,
         this, &MainWindow::drawPixmap, Qt::QueuedConnection);
+    connect(&cameraThread, &CameraThread::drawDetection,
+        this, &MainWindow::drawDetection, Qt::QueuedConnection);
     connect(&refSensorThread, &ReferenceSensorThread::publishData,
         this, &MainWindow::newSensorRead, Qt::QueuedConnection);
     connect(ui->referenceSensorEnableCheckbox, &QCheckBox::stateChanged,
         this, &MainWindow::changeReferenceSensStatus, Qt::QueuedConnection);
     connect(ui->saveVideoCheckbox, &QCheckBox::stateChanged,
         this, &MainWindow::startSaveStatus, Qt::QueuedConnection);
+    connect(ui->readPylonCheckbox, &QCheckBox::stateChanged,
+        &cameraThread, &CameraThread::pylonCameraRead, Qt::QueuedConnection);
 
     connect(this, &MainWindow::lockForehead,
         &cameraThread, &CameraThread::lockForehead, Qt::QueuedConnection);
@@ -153,6 +157,10 @@ void MainWindow::drawPixmap(QPixmap image)
 {
     ui->imageDisplay->setPixmap(image);
 }
+void MainWindow::drawDetection(QPixmap image)
+{
+   ui->algorithmArea->setPixmap(image);
+}
 
 void MainWindow::openMovie() {
     auto fileName = QFileDialog::getOpenFileName(this,
@@ -183,5 +191,12 @@ void MainWindow::keyPressEvent(QKeyEvent* key)
 
 MainWindow::~MainWindow()
 {
+    if(cameraThread.isRunning())
+        cameraThread.end();
+    if(algorithmThread.isRunning())
+        algorithmThread.end();
+    if(refSensorThread.isRunning())
+        refSensorThread.end();
+
     delete ui;
 }

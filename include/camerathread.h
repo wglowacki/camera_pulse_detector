@@ -9,11 +9,7 @@
 #include <opencv2/cudaimgproc.hpp>
 #include "functionsandtools.h"
 #include "framebuffer.h"
-
-#define READ_PYLON
-#ifdef READ_PYLON
 #include "camerapylon.h"
-#endif
 
 class CameraThread : public QThread
 {
@@ -23,6 +19,7 @@ public slots:
     void end();
 signals:
     void drawPixmap(QPixmap pixmap);
+    void drawDetection(QPixmap pixmap);
     void cameraDisconnected();
     void currentFpsValue(double value);
 
@@ -33,8 +30,9 @@ public:
     void setForeheadBuffer(QVector< std::shared_ptr
                         <FrameBuffer> >& frameBuffer);
     void setImageReceivedFlag(bool& flagReceivedNewImage);
-    void sendFrameToDisplay(cv::Mat& frame);
+    void sendFrameToDisplay(cv::Mat& frame, bool wholeFrame);
     void startSaveStatus(bool newState, std::string fn);
+    void pylonCameraRead(int newState);
     void detectFacesOnFrame();
     bool isCameraAvailable();
     void changeInertia(int newValue);
@@ -65,6 +63,7 @@ private:
         startTs = std::chrono::system_clock::now();
 
     QTime movieFps;
+    bool readBaslerCamera = false;
     double elapsedTime = 0.0;
     std::chrono::duration<double> usFrameTs;
     double grabTs = 0.0;
@@ -73,14 +72,12 @@ private:
     cv::VideoWriter savedVideo;
     int saveImageCounter = 0;
     std::string saveImageDir = "";
-#ifndef READ_PYLON
-    std::unique_ptr<cv::VideoCapture> cameraStream
-        = std::make_unique<cv::VideoCapture>(0);
-#else
-    CameraPylon pylonCamera;
-#endif
-    std::unique_ptr<cv::VideoCapture> videoStream
-        = std::make_unique<cv::VideoCapture>();
+    std::shared_ptr<cv::VideoCapture> cameraStream
+        = std::make_shared<cv::VideoCapture>(0);
+    std::shared_ptr<CameraPylon> pylonCamera;
+
+    std::shared_ptr<cv::VideoCapture> videoStream
+        = std::make_shared<cv::VideoCapture>();
 
     QVector<std::shared_ptr<FrameBuffer>> faceBuff;
     QVector<std::shared_ptr<FrameBuffer>> foreheadBuff;
@@ -90,16 +87,11 @@ private:
     int inertia = 15;
     std::vector<cv::Rect> detectedFaces;
 
-    QVector<QVector
-        <std::shared_ptr<FrameBuffer>>> vectOfAllFace;
-    QVector<QVector
-        <std::shared_ptr<FrameBuffer>> > vectOfAllForehead;
-    QVector<QVector<QTime>> vectOfAllTimestamps;
 
     struct ForeheadPos {
         double x = 0.5;
         double y = 0.14;
-        double w = 0.42;
+        double w = 0.72;
         double h = 0.20;
     } foreheadPos;
 
