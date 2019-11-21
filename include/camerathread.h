@@ -71,7 +71,7 @@ private:
     std::shared_ptr<cv::VideoCapture> cameraStream;
     std::shared_ptr<CameraPylon> pylonCamera;
 
-    std::shared_ptr<cv::VideoCapture> videoStream;
+    std::string videoStreamName;
 
     QVector<std::shared_ptr<FrameBuffer>> faceBuff;
     QVector<std::shared_ptr<FrameBuffer>> foreheadBuff;
@@ -84,9 +84,9 @@ private:
 
     struct ForeheadPos {
         double x = 0.5;
-        double y = 0.14;
-        double w = 0.72;
-        double h = 0.20;
+        double y = 0.7;
+        double w = 0.7;
+        double h = 0.5;
     } foreheadPos;
 
     CaptureProperties cameraProp{640, 480, 20}, videoProp{640, 480, 20};

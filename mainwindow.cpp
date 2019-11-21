@@ -164,9 +164,9 @@ void MainWindow::drawDetection(QPixmap image)
 }
 
 void MainWindow::openMovie() {
-    auto fileName = QFileDialog::getOpenFileName(this,
-        tr("Open Video"), QStandardPaths::displayName(
-        QStandardPaths::DesktopLocation), tr(""));
+    auto fileName = QFileDialog::getExistingDirectory(this,
+        tr("Open folder of video"), QStandardPaths::displayName(
+        QStandardPaths::DesktopLocation));
     if(cameraThread.isRunning()) {
         cameraDisconnected();
     }

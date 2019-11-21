@@ -18,11 +18,6 @@ void CameraThread::init()
         cameraStream->set(CV_CAP_PROP_FPS, cameraProp.fps);
         cameraStream->set(CV_CAP_PROP_FRAME_WIDTH, cameraProp.width);
         cameraStream->set(CV_CAP_PROP_FRAME_HEIGHT, cameraProp.height);
-
-        videoStream = std::make_shared<cv::VideoCapture>();
-        videoStream->set(CV_CAP_PROP_FPS, videoProp.fps);
-        videoStream->set(CV_CAP_PROP_FRAME_WIDTH, videoProp.width);
-        videoStream->set(CV_CAP_PROP_FRAME_HEIGHT, videoProp.height);
     }
 
 }
@@ -133,9 +128,9 @@ void CameraThread::pylonCameraRead(int newState)
 
 void CameraThread::readFromFile(QString fn)
 {
-    videoStream->open(fn.toStdString());
+    videoStreamName = fn.toStdString();
     movieFps.start();
-    qDebug() << "File name" << fn;
+    qDebug() << "Directory name: " << fn;
 }
 
 void CameraThread::setFaceBuffer(
@@ -250,7 +245,7 @@ void CameraThread::detectFacesOnFrame()
                         channels[1], usFrameTs.count());
             mtx.unlock();
 //#else
-//            double castedTime = static_cast<double>(pylonTs/1000)/10000000;
+//            double castedTime = static_cast<double>(pylonTs/1000)/1000000;
 //            if(matFace.empty()) {
 //                return;
 //            }
@@ -308,9 +303,6 @@ void CameraThread::end() {
 
     if(cameraStream->isOpened()) {
         cameraStream->release();
-    }
-    if(videoStream->isOpened()) {
-        videoStream->release();
     }
 
     saveStatus = false;

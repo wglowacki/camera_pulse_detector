@@ -5,16 +5,16 @@ DFRobot_Heartrate heartrate(DIGITAL_MODE);
 
 void setup()
 {
-    Serial.begin(9600);
+  Serial.begin(115200);
 }
 
 void loop()
 {
     uint8_t rateVal;
-    heartrate.getValue(A1);
+    heartrate.getValue(heartratePin);
     rateVal = heartrate.getRate();
     if(rateVal) {
         Serial.println(rateVal);
     }
-    delay(10);
+    delay(20);
 }
